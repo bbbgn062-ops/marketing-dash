@@ -131,48 +131,54 @@ const S={
 
 /* ═══ CLOUD SYNC (GitHub Gist) ═══ */
 const Cloud={
-  token:null,gistId:null,active:false,
-  init(token,gistId){
-    this.token=token;this.gistId=gistId;this.active=!!(token);
+  token:null,repo:'bbbgn062-ops/marketing-dash',path:'data.json',active:false,sha:null,
+  init(token){
+    this.token=token;this.active=!!(token);
     return this.active;
   },
-  async createGist(){
-    if(!this.token)return null;
-    const d=S.exportAll();
-    const res=await fetch('https://api.github.com/gists',{
-      method:'POST',
-      headers:{'Authorization':'token '+this.token,'Content-Type':'application/json'},
-      body:JSON.stringify({description:'리셋회생 마케팅 데이터',public:false,files:{'data.json':{content:JSON.stringify(d,null,2)}}})
-    });
-    if(!res.ok)return null;
-    const g=await res.json();this.gistId=g.id;this.active=true;return g.id;
-  },
   async push(){
-    if(!this.active||!this.token||!this.gistId)return false;
+    if(!this.active||!this.token)return false;
     const d=S.exportAll();d._pushTime=new Date().toISOString();
     try{
-      const res=await fetch('https://api.github.com/gists/'+this.gistId,{
-        method:'PATCH',
+      // 먼저 기존 파일의 sha 가져오기
+      const getRes=await fetch('https://api.github.com/repos/'+this.repo+'/contents/'+this.path,{
+        headers:{'Authorization':'token '+this.token}
+      });
+      let sha=null;
+      if(getRes.ok){const g=await getRes.json();sha=g.sha}
+      const body={message:'sync: '+new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}),content:btoa(unescape(encodeURIComponent(JSON.stringify(d,null,2))))};
+      if(sha)body.sha=sha;
+      const res=await fetch('https://api.github.com/repos/'+this.repo+'/contents/'+this.path,{
+        method:'PUT',
         headers:{'Authorization':'token '+this.token,'Content-Type':'application/json'},
-        body:JSON.stringify({files:{'data.json':{content:JSON.stringify(d,null,2)}}})
+        body:JSON.stringify(body)
       });
       return res.ok;
     }catch(e){console.error('[Cloud] Push failed:',e);return false}
   },
   async pull(){
-    if(!this.active||!this.token||!this.gistId)return null;
+    if(!this.active||!this.token)return null;
     try{
-      const res=await fetch('https://api.github.com/gists/'+this.gistId,{
+      const res=await fetch('https://api.github.com/repos/'+this.repo+'/contents/'+this.path,{
         headers:{'Authorization':'token '+this.token}
       });
       if(!res.ok)return null;
       const g=await res.json();
-      const content=g.files?.['data.json']?.content;
-      if(!content)return null;
-      const d=JSON.parse(content);S.importAll(d);return d;
+      if(!g.content)return null;
+      const json=decodeURIComponent(escape(atob(g.content.replace(/\n/g,''))));
+      const d=JSON.parse(json);S.importAll(d);return d;
     }catch(e){console.error('[Cloud] Pull failed:',e);return null}
   },
-  disconnect(){this.active=false;this.token=null;this.gistId=null}
+  async test(){
+    if(!this.token)return false;
+    try{
+      const res=await fetch('https://api.github.com/repos/'+this.repo,{
+        headers:{'Authorization':'token '+this.token}
+      });
+      return res.ok;
+    }catch(e){return false}
+  },
+  disconnect(){this.active=false;this.token=null}
 };
 
 /* ═══ CLIPBOARD SYNC ═══ */
@@ -323,13 +329,12 @@ function App(){
   const[saved,setSaved]=useState(false);
   const[syncMsg,setSyncMsg]=useState('');
   const[ghToken,setGhToken]=useP('ghToken','');
-  const[gistId,setGistId]=useP('gistId','');
   const fileRef=useRef(null);
 
   // GitHub Gist auto-connect on load
   useEffect(()=>{
-    if(ghToken&&gistId){
-      Cloud.init(ghToken,gistId);
+    if(ghToken){
+      Cloud.init(ghToken);
     }
   },[]);
 
@@ -544,7 +549,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
       {tab==='cafe'&&<CafeView copy={copy} copyId={copyId} posts={posts} setPosts={setPosts} personas={personas}/>}
       {tab==='memo'&&<MemoView memos={memos} setMemos={setMemos} curUser={curUser}/>}
       {tab==='record'&&<RecordView records={records} setRecords={setRecords} exportReport={exportReport}/>}
-      {tab==='settings'&&<SettingsView keywords={keywords} setKeywords={setKeywords} personas={personas} setPersonas={setPersonas} doExport={doExport} doImport={doImport} fileRef={fileRef} ghToken={ghToken} setGhToken={setGhToken} gistId={gistId} setGistId={setGistId} syncMsg={syncMsg} setSyncMsg={setSyncMsg} cloudPush={cloudPush}/>}
+      {tab==='settings'&&<SettingsView keywords={keywords} setKeywords={setKeywords} personas={personas} setPersonas={setPersonas} doExport={doExport} doImport={doImport} fileRef={fileRef} ghToken={ghToken} setGhToken={setGhToken} syncMsg={syncMsg} setSyncMsg={setSyncMsg} cloudPush={cloudPush}/>}
     </div>
   );
 }
@@ -924,11 +929,10 @@ function RecordView({records,setRecords,exportReport}){
 }
 
 /* ═══ SETTINGS ═══ */
-function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImport,fileRef,ghToken,setGhToken,gistId,setGistId,syncMsg,setSyncMsg,cloudPush}){
+function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImport,fileRef,ghToken,setGhToken,syncMsg,setSyncMsg,cloudPush}){
   const[nk,setNk]=useState('');const[ep,setEp]=useState(null);const[pf,setPf]=useState({});
   const[clipTxt,setClipTxt]=useState('');const[clipCopied,setClipCopied]=useState(false);
   const[tokenInput,setTokenInput]=useState(ghToken||'');
-  const[gistInput,setGistInput]=useState(gistId||'');
   const[ghStatus,setGhStatus]=useState(Cloud.active?'connected':'disconnected');
 
   const addKw=()=>{if(!nk.trim()||keywords.includes(nk.trim()))return;setKeywords(p=>[...p,nk.trim()]);setNk('')};
@@ -941,23 +945,26 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
   const handleClipCopy=async()=>{const ok=await ClipSync.copyToClip();setClipCopied(ok);setTimeout(()=>setClipCopied(false),2500)};
   const handleClipRestore=()=>{if(!clipTxt.trim())return;const ok=ClipSync.restore(clipTxt);if(ok){alert('복원 성공! 새로고침합니다.');location.reload()}else{alert('데이터 형식 오류. 복사한 텍스트를 정확히 붙여넣으세요.')}};
 
-  // GitHub Gist connect
+  // GitHub Repo connect
   const handleGhConnect=async()=>{
     if(!tokenInput.trim()){setSyncMsg('토큰을 입력하세요');return}
-    setSyncMsg('연결 중...');
-    Cloud.init(tokenInput.trim(),gistInput.trim()||null);
-    if(gistInput.trim()){
-      // 기존 Gist 연결
+    setSyncMsg('연결 확인 중...');setGhStatus('connecting');
+    Cloud.init(tokenInput.trim());
+    const ok=await Cloud.test();
+    if(ok){
+      setGhToken(tokenInput.trim());setGhStatus('connected');
+      // 기존 데이터 있으면 내려받기 시도
       const d=await Cloud.pull();
-      if(d){setGhToken(tokenInput.trim());setGistId(gistInput.trim());setGhStatus('connected');setSyncMsg('연결 성공! 데이터 내려받음.');setTimeout(()=>location.reload(),1000)}
-      else{setGhStatus('error');setSyncMsg('Gist를 찾을 수 없거나 토큰이 잘못됨')}
+      if(d){setSyncMsg('연결 성공! 기존 데이터를 내려받았습니다.');setTimeout(()=>location.reload(),1200)}
+      else{
+        // 데이터 없으면 현재 데이터 올리기
+        await Cloud.push();
+        setSyncMsg('연결 성공! 현재 데이터를 업로드했습니다.');
+      }
     }else{
-      // 새 Gist 생성
-      const newId=await Cloud.createGist();
-      if(newId){setGhToken(tokenInput.trim());setGistId(newId);Cloud.gistId=newId;setGistInput(newId);setGhStatus('connected');setSyncMsg('새 클라우드 저장소 생성 완료!')}
-      else{setGhStatus('error');setSyncMsg('생성 실패. 토큰을 확인하세요')}
+      setGhStatus('error');setSyncMsg('연결 실패. 토큰을 확인하세요.');
     }
-    setTimeout(()=>setSyncMsg(''),3000);
+    setTimeout(()=>setSyncMsg(''),4000);
   };
   const handleGhPull=async()=>{
     if(!Cloud.active)return;
@@ -972,7 +979,7 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
     const ok=await Cloud.push();
     setSyncMsg(ok?'업로드 완료!':'업로드 실패');setTimeout(()=>setSyncMsg(''),2000);
   };
-  const handleGhDisconnect=()=>{Cloud.disconnect();setGhToken('');setGistId('');setGhStatus('disconnected');setSyncMsg('')};
+  const handleGhDisconnect=()=>{Cloud.disconnect();setGhToken('');setGhStatus('disconnected');setSyncMsg('')};
 
   return(<div>
     {/* ── Quick Sync (Clipboard) ── */}
@@ -999,7 +1006,7 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
       </div>
     </div>
 
-    {/* ── Cloud Sync (GitHub Gist) ── */}
+    {/* ── Cloud Sync (GitHub Repo) ── */}
     <div className="card" style={{padding:16,borderLeft:'4px solid var(--warn)'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
         <p style={{fontSize:15,fontWeight:800}}>☁️ 클라우드 동기화</p>
@@ -1010,39 +1017,35 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
         </span>
       </div>
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:12,lineHeight:1.7}}>
-        GitHub 계정으로 여러 기기에서 데이터를 동기화합니다. 이미 발급된 토큰을 입력하면 끝!
+        GitHub 저장소에 데이터를 자동 저장합니다. 토큰만 입력하면 어디서든 동기화!
       </p>
 
       {ghStatus==='connected'?<div>
         <div style={{background:'var(--success-l)',borderRadius:10,padding:12,marginBottom:8}}>
           <p style={{fontSize:12,fontWeight:700,color:'var(--success)',marginBottom:4}}>✅ 클라우드 연결됨</p>
-          <p style={{fontSize:11,color:'#047857'}}>Gist ID: <code style={{background:'#d1fae5',padding:'2px 6px',borderRadius:4,fontWeight:700,fontSize:10}}>{gistId?.slice(0,12)}...</code></p>
-          <p style={{fontSize:10,color:'var(--text3)',marginTop:4}}>다른 기기에서 같은 토큰 + 이 Gist ID를 입력하면 동기화됩니다</p>
+          <p style={{fontSize:11,color:'#047857'}}>저장소: <code style={{background:'#d1fae5',padding:'2px 6px',borderRadius:4,fontWeight:700,fontSize:10}}>marketing-dash/data.json</code></p>
+          <p style={{fontSize:10,color:'var(--text3)',marginTop:4}}>다른 기기에서 같은 토큰을 입력하면 자동 동기화됩니다</p>
         </div>
         {syncMsg&&<p style={{fontSize:12,fontWeight:600,color:'var(--primary)',marginBottom:8,textAlign:'center'}}>{syncMsg}</p>}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:6}}>
           <button onClick={handleGhPush} className="btn btn-primary" style={{justifyContent:'center'}}>⬆️ 업로드</button>
           <button onClick={handleGhPull} className="btn btn-success" style={{justifyContent:'center'}}>⬇️ 내려받기</button>
         </div>
-        <button onClick={()=>{navigator.clipboard?.writeText(gistId);setSyncMsg('Gist ID 복사됨!');setTimeout(()=>setSyncMsg(''),1500)}} className="btn btn-ghost" style={{width:'100%',marginBottom:6}}>📋 Gist ID 복사 (다른 기기용)</button>
         <button onClick={handleGhDisconnect} className="btn btn-danger" style={{width:'100%'}}>연결 해제</button>
       </div>
       :<div>
         <div style={{background:'var(--accent-l)',borderRadius:10,padding:12,marginBottom:10}}>
-          <p style={{fontSize:12,fontWeight:700,color:'var(--primary)',marginBottom:4}}>💡 이미 토큰이 있다면 바로 입력!</p>
-          <p style={{fontSize:11,color:'var(--text2)',lineHeight:1.7}}>① 토큰 입력 → ② "연결" 클릭 → 자동으로 클라우드 저장소가 생성됩니다. 다른 기기에서는 같은 토큰 + Gist ID를 입력하면 동기화!</p>
+          <p style={{fontSize:12,fontWeight:700,color:'var(--primary)',marginBottom:4}}>💡 토큰만 입력하면 끝!</p>
+          <p style={{fontSize:11,color:'var(--text2)',lineHeight:1.7}}>토큰 입력 → "연결" 클릭 → 자동으로 데이터가 GitHub 저장소에 저장됩니다. 다른 기기에서도 같은 토큰만 입력하면 OK!</p>
         </div>
-        <div style={{marginBottom:8}}>
+        <div style={{marginBottom:10}}>
           <label style={{fontSize:11,fontWeight:700,color:'var(--text2)',display:'block',marginBottom:4}}>GitHub Token</label>
           <input value={tokenInput} onChange={e=>setTokenInput(e.target.value)} placeholder='ghp_xxxxx...' className="input" type="password" style={{fontSize:13,fontFamily:'monospace'}}/>
         </div>
-        <div style={{marginBottom:10}}>
-          <label style={{fontSize:11,fontWeight:700,color:'var(--text2)',display:'block',marginBottom:4}}>Gist ID (두 번째 기기부터 입력)</label>
-          <input value={gistInput} onChange={e=>setGistInput(e.target.value)} placeholder='비워두면 새로 생성됨' className="input" style={{fontSize:13,fontFamily:'monospace'}}/>
-          <p style={{fontSize:10,color:'var(--text3)',marginTop:3}}>첫 번째 기기에서는 비워두세요. 자동 생성 후 ID가 표시됩니다.</p>
-        </div>
-        {syncMsg&&<p style={{fontSize:12,fontWeight:600,color:'var(--danger)',marginBottom:8,textAlign:'center'}}>{syncMsg}</p>}
-        <button onClick={handleGhConnect} className="btn btn-primary" style={{width:'100%',padding:'14px'}} disabled={!tokenInput.trim()}>🔗 연결</button>
+        {syncMsg&&<p style={{fontSize:12,fontWeight:600,color:ghStatus==='error'?'var(--danger)':'var(--primary)',marginBottom:8,textAlign:'center'}}>{syncMsg}</p>}
+        <button onClick={handleGhConnect} className="btn btn-primary" style={{width:'100%',padding:'14px'}} disabled={!tokenInput.trim()||ghStatus==='connecting'}>
+          {ghStatus==='connecting'?'연결 확인 중...':'🔗 연결'}
+        </button>
       </div>}
     </div>
 
@@ -1110,7 +1113,7 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
 
     <div className="card" style={{padding:14,background:'linear-gradient(135deg,#ecfdf5,#d1fae5)',borderColor:'#bbf7d0'}}>
       <p style={{fontSize:13,fontWeight:700,color:'#065f46'}}>✅ 자동 저장 활성</p>
-      <p style={{fontSize:12,color:'#047857',lineHeight:1.6}}>모든 변경 즉시 저장 · 60초 자동 백업 · 클립보드/Firebase로 기기 간 동기화 가능</p>
+      <p style={{fontSize:12,color:'#047857',lineHeight:1.6}}>모든 변경 즉시 저장 · 60초 자동 백업 · 클립보드/GitHub 클라우드로 기기 간 동기화 가능</p>
     </div>
   </div>);
 }
