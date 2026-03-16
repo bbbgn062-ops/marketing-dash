@@ -12,7 +12,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#fafafa;--bg2:#f3f4f6;--bg3:#e5e7eb;
+  --bg:#eeedf5;--bg2:#e2e0ed;--bg3:#d5d2e3;
   --card:#ffffff;
   --primary:#5b4cdb;--primary-d:#4338ca;--primary-l:#ede9fe;--primary-xl:#f5f3ff;
   --accent:#8b7cf6;--accent-l:#f0edff;
@@ -21,18 +21,24 @@
   --danger:#dc2626;--danger-l:#fef2f2;
   --pink:#ec4899;--teal:#0d9488;--blue:#3b82f6;
   --text:#111827;--text2:#6b7280;--text3:#9ca3af;--text4:#d1d5db;
-  --border:#f0f0f0;--border2:#f5f5f5;
+  --border:#e5e3ef;--border2:#eeecf5;
   --radius:16px;--radius-sm:10px;--radius-xs:6px;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.04),0 1px 3px rgba(0,0,0,.03);
-  --shadow:0 2px 8px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --shadow-md:0 4px 16px rgba(0,0,0,.08);
-  --shadow-lg:0 12px 40px rgba(0,0,0,.12)
+  --shadow-sm:0 1px 2px rgba(91,76,219,.05),0 1px 3px rgba(0,0,0,.03);
+  --shadow:0 2px 8px rgba(91,76,219,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(91,76,219,.1);
+  --shadow-lg:0 12px 40px rgba(91,76,219,.15)
 }
 body{font-family:'Pretendard','Noto Sans KR',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 button,input,textarea,select{font-family:inherit;-webkit-tap-highlight-color:transparent}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--text4);border-radius:9px}::-webkit-scrollbar-thumb:hover{background:var(--text3)}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-sm);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;transition:box-shadow .2s ease,transform .2s ease}
-.card:hover{box-shadow:var(--shadow)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(91,76,219,.08),0 2px 8px rgba(91,76,219,.06);border:1px solid rgba(91,76,219,.1);margin-bottom:10px;overflow:hidden;transition:box-shadow .2s ease,transform .2s ease}
+.card:hover{box-shadow:0 4px 16px rgba(91,76,219,.14)}
+.section-header{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;position:relative;overflow:hidden}
+.section-header::after{content:'';position:absolute;top:-50%;right:-20%;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08)}
+.section-header h2{font-size:16px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
+.section-header p{font-size:11px;opacity:.8;font-weight:400}
+.section-divider{height:2px;background:linear-gradient(90deg,var(--primary-l),var(--bg2),var(--primary-l));margin:16px 0;border-radius:2px}
+.subsection{background:var(--primary-xl);border-radius:var(--radius);padding:14px;margin-bottom:10px;border:1px solid var(--primary-l)}
 .btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:5px;letter-spacing:-.01em}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 3px rgba(91,76,219,.3)}.btn-primary:hover{background:var(--primary-d);box-shadow:0 2px 8px rgba(91,76,219,.35)}
@@ -55,8 +61,8 @@ button,input,textarea,select{font-family:inherit;-webkit-tap-highlight-color:tra
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .modal{background:#fff;border-radius:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:var(--shadow-lg)}
-.stat-card{background:#fff;border-radius:14px;padding:14px 10px;text-align:center;border:1px solid var(--border);transition:all .2s}
-.stat-card:hover{box-shadow:var(--shadow)}
+.stat-card{background:linear-gradient(135deg,#fff 60%,var(--primary-xl));border-radius:14px;padding:14px 10px;text-align:center;border:1px solid var(--border);transition:all .2s}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
 .stat-val{font-size:24px;font-weight:800;line-height:1;color:var(--primary)}
 .stat-label{font-size:10px;color:var(--text3);margin-top:4px;font-weight:500}
 .tab-btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
@@ -211,9 +217,8 @@ function useP(key,def){
 
 /* ═══ DATA ═══ */
 const USERS=[
-  {id:'hyerim',name:'혜림',role:'마케팅·개발·홈페이지',em:'👩‍💻',c:'#4f46e5'},
-  {id:'taehyun',name:'태현',role:'고객서류·고객대응',em:'👨‍💼',c:'#0ea5e9'},
-  {id:'newbie',name:'신입',role:'보조업무',em:'🧑‍🎓',c:'#10b981'}
+  {id:'hyerim',name:'혜림',role:'마케팅·개발·홈페이지 총괄',em:'👩‍💻',c:'#4f46e5'},
+  {id:'taehyun',name:'태현',role:'고객서류·고객대응 (마케팅 5~10%)',em:'👨‍💼',c:'#0ea5e9'}
 ];
 
 /* 롱테일 키워드 풀 — 네이버 연관검색어/자동완성 기반 실검색 패턴 반영
@@ -241,21 +246,39 @@ const DEFAULT_PERSONAS=[
   {id:'account1',name:'계정1: 민지',age:'32세 여성',job:'중소기업 경리',emoji:'👩',color:'#ec4899',
     tone:'~거든요, ~더라구요 체. ㅠㅠ 자주 씀. 줄바꿈 많음. 감정 표현 풍부.',
     background:'카드빚+대출 합쳐서 6천만원. 월급 230만원. 남편 몰래 빚 늘어남.',
-    style:'걱정 많고 소심한 느낌. 누군가한테 털어놓는 듯한 톤'},
+    style:'걱정 많고 소심한 느낌. 누군가한테 털어놓는 듯한 톤',
+    typos:'띄어쓰기: "이렇게까지 → 이렇게 까지", "진짜로 → 진짜 로" 가끔 틀림. "됬다 → 됐다" 혼용. "ㅠ" 1~3개. 문장 끝 "..." 자주 씀.',
+    ageStyle:'30대 여성: 카카오 이모티콘 쓰듯 ㅠㅠ, ㅎㅎ 사용. "근데", "솔직히", "되게" 자주 씀. SNS 문체에 익숙.'},
   {id:'account2',name:'계정2: 준호',age:'38세 남성',job:'택배기사',emoji:'👨',color:'#3b82f6',
     tone:'~했음, ~임 체. 짧은 문장. 직설적. 이모티콘 적게. 건조하지만 진심.',
     background:'사업 실패 후 빚 1억2천. 이혼 후 혼자. 재기 의지 강함.',
-    style:'담담하고 덤덤한 느낌. 팩트 위주로 쓰는 스타일'},
+    style:'담담하고 덤덤한 느낌. 팩트 위주로 쓰는 스타일',
+    typos:'"됬다/됐다" 혼용. "갯수 → 개수", "어의없다 → 어이없다" 가끔 틀림. 쉼표 거의 안 씀. 문장 짧게 끊음.',
+    ageStyle:'30대 후반 남성: "ㅋ" 1개만. "~함", "~했음" 종결. "솔직히", "걍", "암튼" 사용. 감정표현 최소화.'},
   {id:'account3',name:'계정3: 수현맘',age:'44세 여성',job:'학원 보조교사',emoji:'👩‍🦱',color:'#10b981',
     tone:'~요 체. 엄마 느낌. 다정하지만 걱정 많음. ㅎㅎ, ㅋㅋ 가끔 씀.',
     background:'남편 보증 서서 빚 떠안음. 아이 둘 키우면서 회생 진행.',
-    style:'아이들 때문에 힘든데 꿋꿋한 엄마 느낌'}
+    style:'아이들 때문에 힘든데 꿋꿋한 엄마 느낌',
+    typos:'"예요/에요" 혼동. "할수있다 → 할 수 있다" 붙여씀 많음. "~거에요 → ~거예요" 틀림. 느낌표 자주 씀.',
+    ageStyle:'40대 여성: "~네요", "~더라구요" 부드러운 종결. "아이고", "세상에" 감탄사. "맘카페" 문체에 익숙. 이모티콘 대신 ㅎㅎ.'},
+  {id:'account4',name:'계정4: 영수아빠',age:'52세 남성',job:'자영업(식당 폐업)',emoji:'👨‍🦳',color:'#f59e0b',
+    tone:'~합니다, ~습니다 존댓말 위주. 가끔 ~했습니다. 점잖지만 무게감.',
+    background:'식당 운영 15년 후 폐업. 빚 1억8천. 아들 대학 등록금도 걱정.',
+    style:'무거운 책임감. 자존심 강하지만 현실을 받아들이는 과정.',
+    typos:'"되요 → 돼요" 혼동. "~겠지요" 사용. 맞춤법은 비교적 정확. 마침표 꼬박꼬박. 이모티콘 거의 안씀.',
+    ageStyle:'50대 남성: 존댓말 기본. "사실", "솔직히 말씀드리면" 사용. 문장 길게 씀. 축약어/줄임말 안씀. 진중한 톤.'},
+  {id:'account5',name:'계정5: 지연',age:'27세 여성',job:'프리랜서 디자이너',emoji:'👩‍🎨',color:'#8b5cf6',
+    tone:'~했어요, ~거든요. 캐주얼. 이모지 가끔. 줄바꿈 많음. 스토리텔링형.',
+    background:'프리랜서 수입 불규칙. 카드빚 4천만원. 소득증명 어려움.',
+    style:'밝은 척하지만 불안한 20대 느낌. 공감 잘 됨.',
+    typos:'"ㅋㅋㅋ" 2~3개. "너무너무", "진심", "레알" 사용. "안됀다 → 안 된다" 틀림. 쌍따옴표로 강조.',
+    ageStyle:'20대 후반 여성: "~인 거 아시죠?", "~한 느낌?". 물음표 자주. 구어체 강함. "약간", "좀", "완전" 사용.'}
 ];
 
 const CAFE_PROMPTS=[
-  {label:'상담 후기형',getPrompt:(p)=>`${(p.name.split(':')[1]||p.name).trim()}(${p.age}, ${p.job}) 입장에서 개인회생 무료상담 후기를 써줘.\n\n이 사람의 배경: ${p.background}\n\n반드시 지킬 것:\n- 말투: ${p.tone}\n- 스타일: ${p.style}\n- 시작: 내 채무 상황부터 (구체적 금액)\n- 중간: 상담 과정 (변호사님이 뭐라고 했는지 대화체로)\n- 끝: 지금 기분 + "저처럼 고민이면 상담이라도" 자연스럽게\n- 법무법인 리셋회생 딱 1번만 (지인소개 or 검색으로 알게 됨)\n- 분량: 300~450자\n- 전화번호/링크/"광고아님" 절대 금지\n- 너무 깔끔하지 않게. 실제 사람이 급하게 쓴 느낌으로`},
-  {label:'해결 후기형',getPrompt:(p)=>`${(p.name.split(':')[1]||p.name).trim()}(${p.age}, ${p.job})가 개인회생 인가결정 받은 후 쓰는 후기글을 써줘.\n\n이 사람의 배경: ${p.background}\n\n반드시 지킬 것:\n- 말투: ${p.tone}\n- 스타일: ${p.style}\n- 핵심: 전후 비교 숫자 (월 이자 → 변제금 얼마로 줄었는지)\n- 시간 경과 표현 (몇 개월 전 신청 → 지금)\n- 법무법인 리셋회생 1번만 자연스럽게\n- 분량: 350~500자\n- 전화번호/링크/"광고아님" 절대 금지\n- 마지막: 행동유도 자연스럽게`},
-  {label:'정보 공유형',getPrompt:(p)=>`${(p.name.split(':')[1]||p.name).trim()}(${p.age}, ${p.job})가 개인회생 경험 팁을 공유하는 글을 써줘.\n\n이 사람의 배경: ${p.background}\n\n반드시 지킬 것:\n- 말투: ${p.tone}\n- 스타일: ${p.style}\n- 구조: 번호 매긴 팁 3~5개\n- 본인 경험 + 실용 정보 섞기\n- 법무법인 리셋회생 "여러 곳 상담 받아봤는데 여기가 꼼꼼했다" 느낌 1번만\n- 분량: 400~550자\n- 전화번호/링크/"광고아님" 절대 금지\n- 마지막: "궁금한 거 댓글" 소통 유도`}
+  {label:'상담 후기형',getPrompt:(p)=>`${(p.name.split(':')[1]||p.name).trim()}(${p.age}, ${p.job}) 입장에서 개인회생 무료상담 후기를 써줘.\n\n이 사람의 배경: ${p.background}\n\n반드시 지킬 것:\n- 말투: ${p.tone}\n- 스타일: ${p.style}\n- 나이대별 문체: ${p.ageStyle||''}\n- 맞춤법/띄어쓰기 패턴: ${p.typos||'자연스럽게 가끔 틀리기'}\n- 시작: 내 채무 상황부터 (구체적 금액)\n- 중간: 상담 과정 (변호사님이 뭐라고 했는지 대화체로)\n- 끝: 지금 기분 + "저처럼 고민이면 상담이라도" 자연스럽게\n- 법무법인 리셋회생 딱 1번만 (지인소개 or 검색으로 알게 됨)\n- 분량: 300~450자\n- 전화번호/링크/"광고아님" 절대 금지\n- 중요: 실제 사람이 급하게 쓴 느낌. AI가 쓴 티 나면 안 됨. 위의 맞춤법 패턴을 반드시 2~3곳에 적용해서 자연스럽게 틀리기.`},
+  {label:'해결 후기형',getPrompt:(p)=>`${(p.name.split(':')[1]||p.name).trim()}(${p.age}, ${p.job})가 개인회생 인가결정 받은 후 쓰는 후기글을 써줘.\n\n이 사람의 배경: ${p.background}\n\n반드시 지킬 것:\n- 말투: ${p.tone}\n- 스타일: ${p.style}\n- 나이대별 문체: ${p.ageStyle||''}\n- 맞춤법/띄어쓰기 패턴: ${p.typos||'자연스럽게 가끔 틀리기'}\n- 핵심: 전후 비교 숫자 (월 이자 → 변제금 얼마로 줄었는지)\n- 시간 경과 표현 (몇 개월 전 신청 → 지금)\n- 법무법인 리셋회생 1번만 자연스럽게\n- 분량: 350~500자\n- 전화번호/링크/"광고아님" 절대 금지\n- 중요: AI 느낌 절대 금지. 위의 맞춤법 패턴을 2~3곳에 적용. 문장 길이 불규칙하게. 줄바꿈도 사람마다 다르게.`},
+  {label:'정보 공유형',getPrompt:(p)=>`${(p.name.split(':')[1]||p.name).trim()}(${p.age}, ${p.job})가 개인회생 경험 팁을 공유하는 글을 써줘.\n\n이 사람의 배경: ${p.background}\n\n반드시 지킬 것:\n- 말투: ${p.tone}\n- 스타일: ${p.style}\n- 나이대별 문체: ${p.ageStyle||''}\n- 맞춤법/띄어쓰기 패턴: ${p.typos||'자연스럽게 가끔 틀리기'}\n- 구조: 번호 매긴 팁 3~5개\n- 본인 경험 + 실용 정보 섞기\n- 법무법인 리셋회생 "여러 곳 상담 받아봤는데 여기가 꼼꼼했다" 느낌 1번만\n- 분량: 400~550자\n- 전화번호/링크/"광고아님" 절대 금지\n- 중요: 실제 사람 문체. 맞춤법 패턴 2~3곳 적용. 정보글이지만 개인 경험 느낌 유지.`}
 ];
 
 /* ═══ UTILS ═══ */
@@ -268,6 +291,43 @@ const getMonday=d=>{const dt=new Date(d);dt.setDate(dt.getDate()-(dt.getDay()||7
 const getWeekDates=bd=>{const m=getMonday(bd);return Array.from({length:5},(_,i)=>{const d=new Date(m);d.setDate(d.getDate()+i);return d})};
 const DN=['일','월','화','수','목','금','토'];
 
+/* ═══ BLOG CONTENT GUIDE GENERATOR ═══ */
+const BLOG_GUIDES={
+  targets:['빚 3000만원~1억 이상 직장인/자영업자','연체 시작된 30~50대','이혼/보증/사업실패로 채무 발생한 사람','파산 vs 회생 고민 중인 사람','가족 몰래 빚 해결하고 싶은 사람'],
+  angles:['법적 절차 총정리','실제 사례 기반 설명','비용/기간 비교','자격조건 셀프체크','오해와 진실 바로잡기','전문가가 알려주는 팁'],
+  ctas:['무료상담 유도 (부담없이 전화 한 통)','체크리스트 다운로드 유도','관련 글 더보기 유도','댓글 질문 유도'],
+  cautions:['법률 정보 정확성 반드시 확인','과장·단정적 표현 금지 (100% 면책 등)','특정 판사·법원 비하 금지','타 법무법인 비교비하 금지','의뢰인 실명·사건번호 노출 금지']
+};
+function genBlogGuide(kw,num){
+  const seed=kw.length+num;
+  const target=BLOG_GUIDES.targets[seed%BLOG_GUIDES.targets.length];
+  const angle=BLOG_GUIDES.angles[(seed+2)%BLOG_GUIDES.angles.length];
+  const cta=BLOG_GUIDES.ctas[seed%BLOG_GUIDES.ctas.length];
+  // 부제 자동 생성
+  const subtitles=[
+    `${kw} — 2026년 최신 기준 완벽 정리`,
+    `${kw}, 전문 변호사가 쉽게 설명합니다`,
+    `${kw} 궁금증 해결 — 비용·기간·자격 한눈에`,
+    `${kw} 실무 가이드 — 신청 전 반드시 확인하세요`,
+    `${kw} A to Z — 일반인을 위한 쉬운 해설`
+  ];
+  const subtitle=subtitles[seed%subtitles.length];
+  // 목차 자동 생성
+  const tocs=[
+    [`1. ${kw}란? (기본 개념)`,`2. 신청 자격/조건 (2026 기준)`,`3. 절차와 소요기간`,`4. 비용은 얼마?`,`5. 주의사항과 흔한 실수`,`6. 전문가 상담이 필요한 경우`],
+    [`1. ${kw} 핵심 요약`,`2. 실제 사례로 보는 과정`,`3. 꼭 알아야 할 자격조건`,`4. 비용 비교 (직접 vs 전문가)`,`5. 자주 묻는 질문 FAQ`,`6. 다음 단계 안내`],
+    [`1. 왜 ${kw}를 검색하게 됐나요?`,`2. 현재 상황 자가진단법`,`3. 해결 방법 3가지 비교`,`4. 실제 변제금 계산 예시`,`5. 신청 시 흔한 실수 TOP 5`,`6. 전문가에게 물어야 할 질문`]
+  ];
+  const toc=tocs[seed%tocs.length];
+  // 해시태그
+  const mainKw=kw.split(' ').slice(0,2).join('');
+  const tags=[`#${mainKw}`,`#개인회생`,`#채무조정`,`#빚탕감`,`#파산면책`,`#리셋회생`,`#무료상담`,`#2026개인회생`];
+  // 롱테일 SEO
+  const ltKws=[kw,`${kw} 방법`,`${kw} 비용`,`${kw} 후기`,`${kw} 자격`];
+
+  return {subtitle,target,angle,toc,tags:tags.slice(0,6),ltKws,cta,cautions:BLOG_GUIDES.cautions};
+}
+
 function genTasks(date,kws,pers){
   const s=date.getDate()+date.getMonth()*31;const dow=date.getDay();const dk=getDK(date);
   if(dow===0||dow===6)return[];
@@ -275,33 +335,56 @@ function genTasks(date,kws,pers){
   const ci=s%3,pi=s%(pers.length||1);const pp=pers[pi]||DEFAULT_PERSONAS[0];
   const pn=(pp.name.split(':')[1]||pp.name).trim();
 
+  const bg1=genBlogGuide(k1,1),bg2=genBlogGuide(k2,2),bg3=genBlogGuide(k3,3);
+
   const t=[
     {id:dk+'-b1',type:'blog',p:'P0',title:`블로그 #1: ${k1}`,who:'hyerim',min:40,
-      guide:[{step:'Claude에 프롬프트 입력',detail:`/blog-legal ${k1}`},{step:'초안 검수 (3분)',detail:'법률 정보 정확성 확인'},{step:'수정 (15~20분)',detail:'① 제목 클릭유도형 변경\n② 서론 공감문장 추가\n③ 핵심정보 굵게\n④ 상담유도 CTA'},{step:'SEO 점검',detail:'/content-check → 70점 이상이면 발행'},{step:'네이버 블로그 발행',detail:'글쓰기 → 붙여넣기 → 태그5개 → 발행'}],
+      meta:{subtitle:bg1.subtitle,target:bg1.target,angle:bg1.angle,toc:bg1.toc,tags:bg1.tags,ltKws:bg1.ltKws,cta:bg1.cta},
+      guide:[
+        {step:'콘텐츠 기획 확인',detail:`📌 부제: ${bg1.subtitle}\n🎯 타겟: ${bg1.target}\n💡 앵글: ${bg1.angle}\n\n📑 목차:\n${bg1.toc.join('\n')}`},
+        {step:'Claude에 프롬프트 입력',detail:`/blog-legal ${k1}`},
+        {step:'초안 검수 + 수정 (15분)',detail:`① 법률 정보 정확성 확인\n② 제목 → 클릭유도형으로 변경\n③ 서론에 공감문장 추가\n④ 핵심정보 굵게 처리\n⑤ CTA: ${bg1.cta}\n\n⚠️ 주의:\n${bg1.cautions.slice(0,3).join('\n')}`},
+        {step:'SEO 최적화',detail:`🔑 롱테일 키워드:\n${bg1.ltKws.join(' / ')}\n\n🏷 해시태그:\n${bg1.tags.join(' ')}\n\n→ /content-check → 70점↑이면 발행`},
+        {step:'네이버 블로그 발행',detail:'글쓰기 → 붙여넣기 → 태그 삽입 → 카테고리 설정 → 발행'}
+      ],
       prompt:`/blog-legal ${k1}`,done:false},
     {id:dk+'-b2',type:'blog',p:'P0',title:`블로그 #2: ${k2}`,who:'hyerim',min:40,
-      guide:[{step:'Claude에 프롬프트 입력',detail:`/blog-legal ${k2}`},{step:'검수 (3분)',detail:'#1과 내용 겹침 확인'},{step:'수정 (15~20분)',detail:'제목+사례/숫자 추가+소제목'},{step:'발행',detail:'/content-check → 블로그 발행'}],
+      meta:{subtitle:bg2.subtitle,target:bg2.target,angle:bg2.angle,toc:bg2.toc,tags:bg2.tags,ltKws:bg2.ltKws,cta:bg2.cta},
+      guide:[
+        {step:'콘텐츠 기획 확인',detail:`📌 부제: ${bg2.subtitle}\n🎯 타겟: ${bg2.target}\n💡 앵글: ${bg2.angle}\n\n📑 목차:\n${bg2.toc.join('\n')}`},
+        {step:'Claude 프롬프트 입력',detail:`/blog-legal ${k2}`},
+        {step:'검수 + 수정',detail:`① #1과 내용 겹침 확인\n② 제목+사례/숫자 추가\n③ CTA: ${bg2.cta}\n\n🔑 SEO: ${bg2.ltKws.join(' / ')}\n🏷 태그: ${bg2.tags.join(' ')}`},
+        {step:'발행',detail:'/content-check → 블로그 발행'}
+      ],
       prompt:`/blog-legal ${k2}`,done:false},
     {id:dk+'-c1',type:'cafe',p:'P0',title:`카페 침투: ${['상담후기','해결후기','정보공유'][ci]} (${pn})`,who:'hyerim',min:25,
-      guide:[{step:`계정: ${pp.name}`,detail:`${pp.age} ${pp.job}\n말투: ${pp.tone}\n배경: ${pp.background}`},{step:'침투마케팅 탭 → 프롬프트 복사',detail:'페르소나 자동 반영된 프롬프트를 Claude에 입력'},{step:'검수 (5분)',detail:'말투 일치? / 너무 깔끔하지 않은가? / 법무법인명 1번만? / 전화번호 없는가?'},{step:'카페 등록',detail:'⚠️ 계정별 IP 다르게\n⚠️ 같은 카페 다른 계정은 2~3일 간격'},{step:'대시보드에 저장',detail:'본문 복사 + URL + 카페명 입력'}],
+      guide:[
+        {step:`계정 정보: ${pp.name}`,detail:`${pp.age} ${pp.job}\n말투: ${pp.tone}\n배경: ${pp.background}\n분위기: ${pp.style}`},
+        {step:'프롬프트 복사 → Claude 입력',detail:'침투마케팅 탭 → 프롬프트 복사 버튼'},
+        {step:'검수 체크리스트',detail:'✅ 말투가 페르소나와 일치하는가?\n✅ 너무 깔끔/정돈되어 보이지 않는가?\n✅ 법무법인명 정확히 1번만 언급?\n✅ 전화번호/링크/가격 없는가?\n✅ "광고아님" 표현 없는가?\n✅ 300~500자 분량 맞는가?'},
+        {step:'카페 등록',detail:'⚠️ 계정별 IP 분리 (와이파이↔데이터)\n⚠️ 같은 카페에 다른 계정 → 2~3일 간격\n⚠️ 카페별 글쓰기 규칙 확인'},
+        {step:'대시보드 저장',detail:'본문 복사 + URL + 카페명 → 침투마케팅 탭에서 저장'}
+      ],
       prompt:CAFE_PROMPTS[ci].getPrompt(pp),done:false},
     {id:dk+'-b3',type:'blog',p:'P1',title:`블로그 #3 (여유시): ${k3}`,who:'hyerim',min:40,
-      guide:[{step:'여유 확인',detail:'P0 완료 후 진행'},{step:'Claude 프롬프트',detail:`/blog-legal ${k3}`},{step:'빠른 수정+발행',detail:'핵심만 수정 → /content-check → 발행'}],
+      meta:{subtitle:bg3.subtitle,target:bg3.target,angle:bg3.angle,toc:bg3.toc,tags:bg3.tags,ltKws:bg3.ltKws,cta:bg3.cta},
+      guide:[
+        {step:'콘텐츠 기획',detail:`📌 부제: ${bg3.subtitle}\n🎯 타겟: ${bg3.target}\n📑 목차:\n${bg3.toc.join('\n')}`},
+        {step:'Claude 프롬프트',detail:`/blog-legal ${k3}`},
+        {step:'빠른 수정 + 발행',detail:`핵심만 수정 → /content-check\n🏷 태그: ${bg3.tags.join(' ')}`}
+      ],
       prompt:`/blog-legal ${k3}`,done:false},
     {id:dk+'-seo',type:'seo',p:'P1',title:'전일 성과 체크',who:'hyerim',min:15,
-      guide:[{step:'블로그 관리자 → 통계',detail:'조회수/유입키워드/순위 확인'},{step:'성과기록 탭에 기록',detail:'수치 입력'},{step:'저조한 글 개선 검토',detail:'제목변경/태그추가/본문보강'}],
+      guide:[{step:'블로그 관리자 → 통계',detail:'조회수 / 유입키워드 / 검색순위 확인'},{step:'성과기록 탭에 수치 입력',detail:'일일 조회수, 유입 키워드, 순위 변동'},{step:'저조한 글 개선 검토',detail:'제목 변경 / 태그 추가 / 본문 보강 / 이미지 교체'}],
       prompt:'',done:false},
-    {id:dk+'-nc',type:'cafe',p:'P1',title:'[신입] 카페 후기글 보조',who:'newbie',min:30,
-      guide:[{step:'혜림이 준 프롬프트로 초안 생성',detail:'침투마케팅 탭 참고'},{step:'검수 받기',detail:'혜림한테 보여주고 피드백'},{step:'카페 등록',detail:'지정 카페에 올리기'}],
-      prompt:'',done:false},
-    {id:dk+'-typo',type:'check',p:'P1',title:'[신입] 오탈자 확인',who:'newbie',min:15,
-      guide:[{step:'오늘 발행 글 열기',detail:'블로그 글 확인'},{step:'맞춤법 검사',detail:'검사기 + 눈으로 확인'},{step:'오류 시 보고',detail:'메모 탭에 남기기'}],
+    {id:dk+'-th1',type:'cafe',p:'P1',title:'[태현] 카페 후기글 보조',who:'taehyun',min:20,
+      guide:[{step:'혜림이 준 프롬프트로 초안 생성',detail:'침투마케팅 탭 → 프롬프트 복사 → Claude 입력'},{step:'혜림에게 검수 받기',detail:'완성 글 공유 → 피드백 반영'},{step:'카페 등록',detail:'지정 카페에 올리기 → URL 혜림에게 보고'}],
       prompt:'',done:false},
   ];
 
-  if(dow===1)t.push({id:dk+'-kick',type:'meet',p:'P0',title:'주간 킥오프',who:'all',min:15,guide:[{step:'키워드 확인',detail:'이번 주 배정 키워드'},{step:'미완료 확인',detail:'지난주 이월건 재배치'},{step:'태현 서류일정 공유',detail:'고객 서류 마감일'},{step:'특이사항 메모',detail:'변호사님 지시사항'}],prompt:'',done:false});
+  if(dow===1)t.push({id:dk+'-kick',type:'meet',p:'P0',title:'주간 킥오프',who:'all',min:15,guide:[{step:'이번 주 키워드 확인',detail:'대시보드 자동 배정 키워드 리뷰'},{step:'지난주 이월건 재배치',detail:'미완료 P0 업무 확인'},{step:'태현 서류일정 공유',detail:'고객 서류 마감일 공유'},{step:'변호사님 지시사항',detail:'특이사항 메모'}],prompt:'',done:false});
   if(dow===3)t.push({id:dk+'-dev',type:'dev',p:'P1',title:'랜딩페이지/서류시스템 개발',who:'hyerim',min:120,guide:[{step:'개발 범위 확인',detail:'랜딩페이지 or 서류시스템'},{step:'코드 작업',detail:'오후 집중 개발'},{step:'테스트+배포',detail:'모바일+PC 확인 후 반영'}],prompt:'',done:false});
-  if(dow===5)t.push({id:dk+'-retro',type:'meet',p:'P0',title:'주간 회고+리포트',who:'all',min:30,guide:[{step:'발행 수 확인',detail:'목표 대비 실제'},{step:'성과 리포트',detail:'/performance-report'},{step:'카페 반응 확인',detail:'댓글·조회수 확인'},{step:'다음 주 계획',detail:'키워드+특이사항'}],prompt:'/performance-report',done:false});
+  if(dow===5)t.push({id:dk+'-retro',type:'meet',p:'P0',title:'주간 회고+리포트',who:'all',min:30,guide:[{step:'발행 수 확인',detail:'목표(블로그10+카페5) 대비 실제'},{step:'성과 리포트',detail:'/performance-report 실행'},{step:'카페 반응 확인',detail:'댓글·조회수·삭제 여부'},{step:'다음 주 계획',detail:'키워드 조정 + 특이사항'}],prompt:'/performance-report',done:false});
 
   return t;
 }
@@ -394,40 +477,78 @@ function App(){
   const exportReport=()=>{
     const allRecords=records;const allPosts=posts;
     const blogCount=Object.values(tasks).flat().filter(t=>t.type==='blog'&&t.done).length;
+    const blogTotal=Object.values(tasks).flat().filter(t=>t.type==='blog').length;
     const cafeCount=allPosts.length;
     const totalViews=allPosts.reduce((s,p)=>s+(p.views||0),0);
     const totalComments=allPosts.reduce((s,p)=>s+(p.comments||0),0);
     const perfRecords=allRecords.filter(r=>r.type==='성과');
-    const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>마케팅 성과 리포트 - ${todayDK}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans KR',sans-serif;padding:40px;max-width:800px;margin:0 auto;color:#1e293b;line-height:1.7}
-h1{font-size:24px;color:#3730a3;border-bottom:3px solid #4f46e5;padding-bottom:10px;margin-bottom:20px}
-h2{font-size:18px;color:#4f46e5;margin:24px 0 12px;padding-left:10px;border-left:4px solid #4f46e5}
+    const allTasksFlat=Object.values(tasks).flat();
+    const totalDone=allTasksFlat.filter(t=>t.done).length;
+    const totalTasks=allTasksFlat.length;
+    const completionRate=totalTasks?Math.round(totalDone/totalTasks*100):0;
+    const avgViewsPerPost=cafeCount?Math.round(totalViews/cafeCount):0;
+
+    // 주간 추이 계산
+    const weekData=[];
+    for(let w=3;w>=0;w--){
+      const start=new Date(now);start.setDate(start.getDate()-w*7-now.getDay()+1);
+      let bd=0,bt=0,cp=0;
+      for(let d=0;d<5;d++){const dd=new Date(start);dd.setDate(dd.getDate()+d);const dk2=getDK(dd);const dt2=tasks[dk2]||[];
+        bt+=dt2.filter(t=>t.type==='blog').length;bd+=dt2.filter(t=>t.type==='blog'&&t.done).length;}
+      weekData.push({label:`${start.getMonth()+1}/${start.getDate()}주`,blog:bd,blogT:bt});
+    }
+
+    const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>마케팅 월간 성과 리포트 - ${todayDK}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans KR',sans-serif;padding:40px;max-width:800px;margin:0 auto;color:#1e293b;line-height:1.7;background:#fafafa}
+.header{background:linear-gradient(135deg,#312e81,#4338ca);color:#fff;padding:30px;border-radius:16px;margin-bottom:24px}
+.header h1{font-size:24px;font-weight:900;margin-bottom:4px}.header p{opacity:.8;font-size:13px}
+h2{font-size:18px;color:#4f46e5;margin:28px 0 14px;padding:8px 12px;background:#f5f3ff;border-radius:8px;border-left:4px solid #4f46e5}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
-.stat{background:#f8fafc;border-radius:12px;padding:16px;text-align:center;border:1px solid #e5e7eb}
-.stat .n{font-size:28px;font-weight:900;color:#4f46e5}.stat .l{font-size:12px;color:#64748b;margin-top:4px}
-table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb;font-size:13px}
-th{background:#f8fafc;font-weight:700;color:#4338ca}.footer{margin-top:40px;padding-top:16px;border-top:2px solid #e5e7eb;font-size:12px;color:#94a3b8;text-align:center}
+.stat{background:#fff;border-radius:12px;padding:20px 16px;text-align:center;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.stat .n{font-size:32px;font-weight:900;color:#4f46e5}.stat .l{font-size:12px;color:#64748b;margin-top:6px}
+.stat .sub{font-size:10px;color:#94a3b8;margin-top:2px}
+.highlight{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin:16px 0}
+.highlight h3{color:#065f46;font-size:14px;margin-bottom:8px}.highlight p{font-size:13px;color:#047857}
+table{width:100%;border-collapse:collapse;margin:12px 0;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #f1f5f9;font-size:13px}
+th{background:#f8fafc;font-weight:700;color:#4338ca;font-size:12px}
+.bar-chart{display:flex;gap:12px;align-items:flex-end;height:120px;padding:16px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;margin:12px 0}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{width:100%;border-radius:6px 6px 0 0;transition:height .3s}
+.footer{margin-top:40px;padding:16px;border-top:2px solid #e5e7eb;font-size:12px;color:#94a3b8;text-align:center;background:#f8fafc;border-radius:8px}
+.summary-box{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:12px 0}
 </style></head><body>
-<h1>⚡ 리셋회생 마케팅 성과 리포트</h1>
-<p style="color:#64748b;margin-bottom:20px">작성일: ${todayDK} · 작성자: ${user.name} · 리셋회생 마케팅팀</p>
-<h2>핵심 지표</h2>
-<div class="grid"><div class="stat"><div class="n">${blogCount}</div><div class="l">블로그 발행</div></div>
-<div class="stat"><div class="n">${cafeCount}</div><div class="l">카페 침투글</div></div>
-<div class="stat"><div class="n">${totalViews.toLocaleString()}</div><div class="l">총 조회수</div></div>
-<div class="stat"><div class="n">${totalComments}</div><div class="l">총 댓글</div></div></div>
+<div class="header"><h1>리셋회생 마케팅 월간 성과 리포트</h1><p>작성일: ${todayDK} · 작성자: ${user.name} · 리셋회생 마케팅팀</p></div>
+
+<h2>핵심 KPI</h2>
+<div class="grid">
+<div class="stat"><div class="n">${blogCount}<span style="font-size:16px;color:#94a3b8">/${blogTotal}</span></div><div class="l">블로그 발행</div><div class="sub">달성률 ${blogTotal?Math.round(blogCount/blogTotal*100):0}%</div></div>
+<div class="stat"><div class="n">${cafeCount}</div><div class="l">카페 침투글</div><div class="sub">누적 게시글</div></div>
+<div class="stat"><div class="n">${totalViews.toLocaleString()}</div><div class="l">총 조회수</div><div class="sub">평균 ${avgViewsPerPost}회/글</div></div>
+<div class="stat"><div class="n">${completionRate}%</div><div class="l">업무 완료율</div><div class="sub">${totalDone}/${totalTasks}건</div></div>
+</div>
+
+<div class="highlight"><h3>이번 달 주요 성과</h3><p>블로그 ${blogCount}편 발행, 카페 ${cafeCount}편 침투, 총 조회수 ${totalViews.toLocaleString()}회 달성. 업무 완료율 ${completionRate}%로 ${completionRate>=80?'목표 달성':'목표 미달'}.</p></div>
+
+<h2>주간 블로그 발행 추이</h2>
+<div class="bar-chart">${weekData.map(w=>`<div class="bar-col"><div class="bar" style="height:${Math.max((w.blog/Math.max(...weekData.map(x=>x.blogT),1))*80,8)}px;background:linear-gradient(180deg,#6c5ce7,#a29bfe)"></div><span style="font-size:11px;font-weight:700;color:#6c5ce7">${w.blog}</span><span style="font-size:10px;color:#94a3b8">${w.label}</span></div>`).join('')}</div>
+
 <h2>카페 게시글 상세</h2>
 ${allPosts.length?`<table><tr><th>날짜</th><th>계정</th><th>유형</th><th>카페</th><th>조회</th><th>댓글</th><th>상태</th></tr>
-${allPosts.map(p=>`<tr><td>${p.date}</td><td>${(p.personaName||'').split(':')[1]||p.personaName||''}</td><td>${p.type}</td><td>${p.cafeName}</td><td>${p.views||0}</td><td>${p.comments||0}</td><td>${p.status}</td></tr>`).join('')}</table>`:'<p>데이터 없음</p>'}
+${allPosts.slice(0,20).map(p=>`<tr><td>${p.date}</td><td>${(p.personaName||'').split(':')[1]||p.personaName||''}</td><td>${p.type}</td><td>${p.cafeName}</td><td>${p.views||0}</td><td>${p.comments||0}</td><td>${p.status}</td></tr>`).join('')}</table>${allPosts.length>20?`<p style="font-size:12px;color:#94a3b8;margin-top:4px">외 ${allPosts.length-20}건</p>`:''}`:'<p style="color:#94a3b8">데이터 없음</p>'}
+
 <h2>성과 기록</h2>
 ${perfRecords.length?`<table><tr><th>날짜</th><th>제목</th><th>수치</th><th>상세</th></tr>
-${perfRecords.map(r=>`<tr><td>${r.date}</td><td>${r.title}</td><td>${r.amount||'-'}</td><td>${r.detail||'-'}</td></tr>`).join('')}</table>`:'<p>데이터 없음</p>'}
+${perfRecords.map(r=>`<tr><td>${r.date}</td><td>${r.title}</td><td>${r.amount||'-'}</td><td>${r.detail||'-'}</td></tr>`).join('')}</table>`:'<p style="color:#94a3b8">데이터 없음</p>'}
+
 <h2>전체 기록 요약</h2>
-<table><tr><th>유형</th><th>건수</th></tr>
-${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td>${allRecords.filter(r=>r.type===t).length}건</td></tr>`).join('')}</table>
-<div class="footer">리셋회생 마케팅 커맨드센터 · 자동 생성 리포트 · ${new Date().toLocaleString('ko-KR')}</div>
+<div class="summary-box"><table style="box-shadow:none;margin:0"><tr><th>유형</th><th>건수</th></tr>
+${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td style="font-weight:700;color:#4f46e5">${allRecords.filter(r=>r.type===t).length}건</td></tr>`).join('')}</table></div>
+
+<div class="footer">리셋회생 마케팅 커맨드센터 v5 · 자동 생성 리포트 · ${new Date().toLocaleString('ko-KR')}</div>
 </body></html>`;
     const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download=`마케팅_성과리포트_${todayDK}.html`;a.click();URL.revokeObjectURL(url);
+    const a=document.createElement('a');a.href=url;a.download=`마케팅_월간리포트_${todayDK}.html`;a.click();URL.revokeObjectURL(url);
   };
 
   const tabs=[
@@ -436,6 +557,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
     {id:'cafe',l:'침투마케팅',ic:'🎭'},
     {id:'memo',l:'메모',ic:'📝'},
     {id:'record',l:'성과',ic:'📊'},
+    {id:'risk',l:'리스크',ic:'🛡️'},
     {id:'settings',l:'설정',ic:'⚙️'},
   ];
 
@@ -445,16 +567,16 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
 
       {/* ── HEADER ── */}
       <div style={{marginBottom:12}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,padding:'0 2px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,padding:'12px 16px',background:'linear-gradient(135deg,#312e81,#4338ca)',borderRadius:'var(--radius)',boxShadow:'0 4px 20px rgba(67,56,202,.25)'}}>
           <div>
-            <h1 style={{fontSize:20,fontWeight:800,color:'var(--text)',letterSpacing:'-.03em',display:'flex',alignItems:'center',gap:6}}>리셋회생 마케팅 <span className="live-dot"/></h1>
-            <p style={{fontSize:12,color:'var(--text3)',marginTop:2}}>
+            <h1 style={{fontSize:20,fontWeight:800,color:'#fff',letterSpacing:'-.03em',display:'flex',alignItems:'center',gap:6}}>리셋회생 마케팅 <span className="live-dot"/></h1>
+            <p style={{fontSize:12,color:'rgba(255,255,255,.7)',marginTop:2}}>
               {wd[0].getMonth()+1}/{wd[0].getDate()} ~ {wd[4].getMonth()+1}/{wd[4].getDate()}
               {isThisWeek&&` · ${getKoreanDate()}`}
             </p>
           </div>
           <div style={{position:'relative'}}>
-            <button onClick={()=>setShowMenu(!showMenu)} style={{background:'var(--primary-l)',border:'none',borderRadius:10,padding:'7px 14px',color:'var(--primary)',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all .15s'}}>
+            <button onClick={()=>setShowMenu(!showMenu)} style={{background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'7px 14px',color:'#fff',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all .15s',backdropFilter:'blur(4px)'}}>
               {user.em} {user.name} ▾
             </button>
             {showMenu&&<div style={{position:'absolute',top:'100%',right:0,marginTop:4,background:'#fff',borderRadius:12,boxShadow:'var(--shadow-lg)',padding:4,zIndex:99,width:180,border:'1px solid var(--border)'}}>
@@ -535,7 +657,8 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
       {tab==='week'&&<WeekView allDays={allDays} setSelIdx={setSelIdx} setTab={setTab} todayDK={todayDK}/>}
       {tab==='cafe'&&<CafeView copy={copy} copyId={copyId} posts={posts} setPosts={setPosts} personas={personas}/>}
       {tab==='memo'&&<MemoView memos={memos} setMemos={setMemos} curUser={curUser}/>}
-      {tab==='record'&&<RecordView records={records} setRecords={setRecords} exportReport={exportReport}/>}
+      {tab==='record'&&<RecordView records={records} setRecords={setRecords} exportReport={exportReport} tasks={tasks} posts={posts}/>}
+      {tab==='risk'&&<RiskView/>}
       {tab==='settings'&&<SettingsView keywords={keywords} setKeywords={setKeywords} personas={personas} setPersonas={setPersonas} doExport={doExport} doImport={doImport} fileRef={fileRef} ghToken={ghToken} setGhToken={setGhToken} syncMsg={syncMsg} setSyncMsg={setSyncMsg} cloudPush={cloudPush}/>}
     </div>
   );
@@ -552,8 +675,12 @@ function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,copy,copyId,cur
   const handleAdd=()=>{if(!newTitle.trim())return;addTask(dk,{id:dk+'-c'+Date.now(),type:newType,p:'P1',title:newTitle,who:curUser,min:+newMin||30,guide:[{step:'직접 추가 업무',detail:'메모 탭 참고'}],prompt:'',done:false});setNewTitle('');setAddMode(false)};
 
   return(<div>
+    <div className="section-header">
+      <h2>☀️ 오늘의 업무</h2>
+      <p>진행률 {dPct}% · 총 {tasks.length}개 · 완료 {tasks.filter(t=>t.done).length}개</p>
+    </div>
     {!isToday&&<div className="card" style={{padding:10,background:'var(--warn-l)',textAlign:'center'}}><p style={{fontSize:12,fontWeight:600,color:'var(--warn)'}}>📅 조회 모드 — 오늘이 아닙니다</p></div>}
-    {dPct===100&&tasks.length>0&&<div className="card" style={{padding:20,background:'var(--success-l)',textAlign:'center'}}><p style={{fontSize:28}}>🎉</p><p style={{fontSize:16,fontWeight:700,color:'var(--success)',marginTop:4}}>오늘 업무 완료!</p><p style={{fontSize:12,color:'#047857',marginTop:2}}>{tasks.length}개 업무 모두 처리됨</p></div>}
+    {dPct===100&&tasks.length>0&&<div className="card" style={{padding:20,background:'linear-gradient(135deg,#ecfdf5,#d1fae5)',textAlign:'center',border:'1px solid #bbf7d0'}}><p style={{fontSize:28}}>🎉</p><p style={{fontSize:16,fontWeight:700,color:'var(--success)',marginTop:4}}>오늘 업무 완료!</p><p style={{fontSize:12,color:'#047857',marginTop:2}}>{tasks.length}개 업무 모두 처리됨</p></div>}
     {carry.length>0&&<div className="card" style={{padding:12}}>
       <p style={{fontSize:12,fontWeight:700,color:'var(--danger)',marginBottom:6}}>🔄 이월 {carry.length}건</p>
       {carry.map((t,i)=><div key={i} style={{background:'var(--danger-l)',borderRadius:8,padding:'6px 10px',marginBottom:3}}><p style={{fontSize:12,fontWeight:600,color:'var(--danger)'}}>{t.title}</p><p style={{fontSize:10,color:'var(--text3)'}}>{t.from} · {t.min}분</p></div>)}
@@ -575,21 +702,25 @@ function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,copy,copyId,cur
     {my.map(t=><TaskCard key={t.id} task={t} dk={dk} updateTask={updateTask} deleteTask={deleteTask} copy={copy} copyId={copyId}/>)}
     {other.length>0&&<><p style={{fontSize:14,fontWeight:800,margin:'18px 0 8px',padding:'0 4px'}}>👥 다른 팀원</p>{other.map(t=><TaskCard key={t.id} task={t} dk={dk} updateTask={updateTask} deleteTask={deleteTask} copy={copy} copyId={copyId}/>)}</>}
 
-    <div className="card" style={{padding:14,marginTop:6}}>
-      <p style={{fontSize:13,fontWeight:700,color:'var(--text)',marginBottom:8}}>⏰ 일일 타임라인</p>
-      <div style={{display:'flex',flexDirection:'column',gap:4}}>
+    <div className="card" style={{padding:14,marginTop:6,background:'linear-gradient(135deg,#f8f7ff 0%,#f0edff 100%)',border:'1px solid var(--primary-l)'}}>
+      <p style={{fontSize:13,fontWeight:700,color:'var(--primary)',marginBottom:10}}>⏰ 일일 타임라인</p>
+      <div style={{display:'flex',flexDirection:'column',gap:2,position:'relative',paddingLeft:18}}>
+        <div style={{position:'absolute',left:7,top:6,bottom:6,width:2,background:'linear-gradient(180deg,var(--primary),var(--accent),var(--text4))',borderRadius:2}}/>
         {[
-          {t:'09:00',l:'전일 성과 체크',c:'#00b894'},
-          {t:'09:20',l:'블로그 #1 작성',c:'#6c5ce7'},
-          {t:'10:00',l:'블로그 #2 작성',c:'#6c5ce7'},
-          {t:'10:40',l:'카페 침투글 작성',c:'#a29bfe'},
-          {t:'11:10',l:'SEO 점검 + 발행',c:'#e17055'},
-          {t:'14:00',l:'블로그 #3 (여유시)',c:'#74b9ff'},
-          {t:'14:40',l:'내일 준비 + 정리',c:'#636e72'},
-        ].map((x,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontSize:11,fontWeight:800,color:x.c,width:40,textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{x.t}</span>
-          <div style={{width:8,height:8,borderRadius:'50%',background:x.c,flexShrink:0,boxShadow:`0 0 6px ${x.c}44`}}/>
-          <span style={{fontSize:12,color:'var(--text)',fontWeight:500}}>{x.l}</span>
+          {t:'09:00',l:'전일 성과 체크',c:'#00b894',w:15},
+          {t:'09:20',l:'블로그 #1 작성',c:'#6c5ce7',w:40},
+          {t:'10:00',l:'블로그 #2 작성',c:'#6c5ce7',w:40},
+          {t:'10:40',l:'카페 침투글 작성',c:'#a29bfe',w:25},
+          {t:'11:10',l:'SEO 점검 + 발행',c:'#e17055',w:15},
+          {t:'14:00',l:'블로그 #3 (여유시)',c:'#74b9ff',w:40},
+          {t:'14:40',l:'내일 준비 + 정리',c:'#636e72',w:20},
+        ].map((x,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',position:'relative'}}>
+          <div style={{position:'absolute',left:-14,width:10,height:10,borderRadius:'50%',background:x.c,border:'2px solid #fff',boxShadow:`0 0 6px ${x.c}44`,zIndex:1}}/>
+          <span style={{fontSize:11,fontWeight:800,color:x.c,width:38,textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{x.t}</span>
+          <div style={{flex:1,background:'#fff',borderRadius:8,padding:'5px 10px',display:'flex',justifyContent:'space-between',alignItems:'center',border:`1px solid ${x.c}22`}}>
+            <span style={{fontSize:12,color:'var(--text)',fontWeight:500}}>{x.l}</span>
+            <span style={{fontSize:10,color:x.c,fontWeight:700}}>{x.w}분</span>
+          </div>
         </div>)}
       </div>
     </div>
@@ -626,7 +757,18 @@ function TaskCard({task,dk,updateTask,deleteTask,copy,copyId}){
       </div>
       <div className={`expandable ${exp?'open':''}`}>
         <div style={{padding:'0 14px 14px',borderTop:'1px solid var(--border2)'}}>
-          <p style={{fontSize:12,fontWeight:700,color:'var(--primary)',margin:'12px 0 8px'}}>실행 가이드</p>
+          {/* 블로그 메타 정보 표시 */}
+          {task.meta&&<div style={{background:'var(--primary-xl)',borderRadius:10,padding:12,margin:'10px 0 8px',border:'1px solid var(--primary-l)'}}>
+            <p style={{fontSize:11,fontWeight:700,color:'var(--primary)',marginBottom:6}}>📋 콘텐츠 브리프</p>
+            <div style={{fontSize:11,color:'var(--text)',lineHeight:1.7}}>
+              <p><span style={{fontWeight:600,color:'var(--primary)'}}>부제:</span> {task.meta.subtitle}</p>
+              <p><span style={{fontWeight:600,color:'var(--primary)'}}>타겟:</span> {task.meta.target}</p>
+              <p><span style={{fontWeight:600,color:'var(--primary)'}}>앵글:</span> {task.meta.angle}</p>
+              <p style={{marginTop:4}}><span style={{fontWeight:600,color:'var(--primary)'}}>🔑 SEO:</span> {task.meta.ltKws?.join(' | ')}</p>
+              <p><span style={{fontWeight:600,color:'var(--primary)'}}>🏷 태그:</span> {task.meta.tags?.join(' ')}</p>
+            </div>
+          </div>}
+          <p style={{fontSize:12,fontWeight:700,color:'var(--primary)',margin:'8px 0 8px'}}>실행 가이드</p>
           {(task.guide||[]).map((g,i)=><div key={i} style={{display:'flex',gap:8,marginBottom:8}}><div className="step-num" style={{background:ti.c}}>{i+1}</div><div><p style={{fontSize:13,fontWeight:600}}>{g.step}</p><p style={{fontSize:12,color:'var(--text2)',lineHeight:1.6,whiteSpace:'pre-wrap'}}>{g.detail}</p></div></div>)}
           {task.prompt&&<div className="prompt-box"><p style={{fontSize:10,fontWeight:600,color:'var(--primary)',marginBottom:4}}>프롬프트</p><pre>{task.prompt}</pre><button className="copy-btn" onClick={()=>copy(task.prompt,task.id+'p')}>{copyId===task.id+'p'?'✅':'📋'}</button></div>}
         </div>
@@ -637,7 +779,14 @@ function TaskCard({task,dk,updateTask,deleteTask,copy,copyId}){
 
 /* ═══ WEEK VIEW ═══ */
 function WeekView({allDays,setSelIdx,setTab,todayDK}){
-  return(<div>{allDays.map((day,i)=>{
+  const wDone=allDays.flatMap(d=>d.tasks).filter(t=>t.done).length;
+  const wTotal=allDays.flatMap(d=>d.tasks).length;
+  return(<div>
+    <div className="section-header" style={{background:'linear-gradient(135deg,#3b82f6,#6366f1)'}}>
+      <h2>📅 주간 현황</h2>
+      <p>완료 {wDone}/{wTotal} · 진행률 {wTotal?Math.round(wDone/wTotal*100):0}%</p>
+    </div>
+  {allDays.map((day,i)=>{
     const dn=day.tasks.filter(t=>t.done).length;const p=day.tasks.length?Math.round(dn/day.tasks.length*100):0;const isT=day.dk===todayDK;
     return(<div key={i} className="card" onClick={()=>{setSelIdx(i);setTab('today')}} style={{padding:'12px 14px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',borderLeft:isT?'3px solid var(--warn)':'none',animation:'cardIn .2s ease',animationDelay:`${i*0.03}s`,animationFillMode:'both'}}>
       <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -676,6 +825,10 @@ function CafeView({copy,copyId,posts,setPosts,personas}){
   const filtered=posts.filter(x=>(fp==='all'||x.persona===fp)&&(!sq||x.body.includes(sq)||x.cafeName.includes(sq)||(x.notes||'').includes(sq)));
 
   return(<div>
+    <div className="section-header" style={{background:'linear-gradient(135deg,#8b5cf6,#a855f7)'}}>
+      <h2>🎭 침투마케팅</h2>
+      <p>{personas.length}개 계정 · {posts.length}편 누적</p>
+    </div>
     <div style={{display:'flex',gap:2,marginBottom:10,background:'var(--bg2)',borderRadius:10,padding:3}}>
       {[{id:'write',l:'✏️ 글작성'},{id:'posts',l:`📋 게시글(${posts.length})`},{id:'personas',l:'👥 계정'}].map(t=>
         <button key={t.id} onClick={()=>setSub(t.id)} className="tab-btn" style={{flex:1,background:sub===t.id?'#fff':'transparent',color:sub===t.id?'var(--text)':'var(--text3)',boxShadow:sub===t.id?'var(--shadow-sm)':'none'}}>{t.l}</button>)}
@@ -701,6 +854,8 @@ function CafeView({copy,copyId,posts,setPosts,personas}){
             <p><strong style={{color:p.color}}>배경</strong> {p.background}</p>
             <p><strong style={{color:p.color}}>말투</strong> {p.tone}</p>
             <p><strong style={{color:p.color}}>스타일</strong> {p.style}</p>
+            {p.typos&&<p style={{marginTop:4,background:'#fff8e1',borderRadius:6,padding:'4px 8px',border:'1px solid #fde68a'}}><strong style={{color:'#b45309'}}>✍️ 맞춤법 패턴</strong> {p.typos}</p>}
+            {p.ageStyle&&<p style={{background:'#f0f9ff',borderRadius:6,padding:'4px 8px',border:'1px solid #bae6fd'}}><strong style={{color:'#0369a1'}}>👤 나이대 문체</strong> {p.ageStyle}</p>}
           </div>
         </div>
       </div>
@@ -787,6 +942,8 @@ function CafeView({copy,copyId,posts,setPosts,personas}){
             <p><strong style={{color:'var(--primary)'}}>배경</strong> {pp.background}</p>
             <p><strong style={{color:'var(--primary)'}}>말투</strong> {pp.tone}</p>
             <p><strong style={{color:'var(--primary)'}}>분위기</strong> {pp.style}</p>
+            {pp.typos&&<p><strong style={{color:'#b45309'}}>맞춤법</strong> {pp.typos}</p>}
+            {pp.ageStyle&&<p><strong style={{color:'#0369a1'}}>나이대</strong> {pp.ageStyle}</p>}
           </div>
           <div style={{marginTop:8,background:pp.color+'08',borderRadius:8,padding:'8px 12px'}}>
             <p style={{fontSize:11,fontWeight:600,color:pp.color}}>📅 {i===0?'월·목 → 상담후기':i===1?'화·금 → 정보/해결후기':'수·토 → 공감형'}</p>
@@ -804,6 +961,10 @@ function MemoView({memos,setMemos,curUser}){
   const f=memos.filter(m=>!sq||m.text.includes(sq)||m.name.includes(sq));
 
   return(<div>
+    <div className="section-header" style={{background:'linear-gradient(135deg,#f59e0b,#f97316)'}}>
+      <h2>📝 메모</h2>
+      <p>{memos.length}개 메모 · 핀 {memos.filter(m=>m.pin).length}개</p>
+    </div>
     <div className="card" style={{padding:14}}>
       <textarea value={txt} onChange={e=>setTxt(e.target.value)} placeholder="메모 입력... (Ctrl+Enter 저장)" className="input" style={{minHeight:70,resize:'vertical',marginBottom:6}} onKeyDown={e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))add()}}/>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -837,7 +998,7 @@ function MC({m,setMemos}){
 }
 
 /* ═══ RECORD VIEW ═══ */
-function RecordView({records,setRecords,exportReport}){
+function RecordView({records,setRecords,exportReport,tasks,posts}){
   const[type,setType]=useState('성과');const[title,setTitle]=useState('');const[detail,setDetail]=useState('');const[amount,setAmount]=useState('');
   const[sq,setSq]=useState('');const[ft,setFt]=useState('all');
   const types=[{n:'성과',ic:'📈',c:'#22c55e'},{n:'비용',ic:'💰',c:'#ef4444'},{n:'팁',ic:'💡',c:'#f59e0b'},{n:'아이디어',ic:'🧠',c:'#8b5cf6'},{n:'이슈',ic:'⚠️',c:'#0ea5e9'}];
@@ -846,6 +1007,10 @@ function RecordView({records,setRecords,exportReport}){
   const tc=types.map(t=>({...t,cnt:records.filter(r=>r.type===t.n).length}));const mx=Math.max(...tc.map(t=>t.cnt),1);
 
   return(<div>
+    <div className="section-header" style={{background:'linear-gradient(135deg,#059669,#10b981)'}}>
+      <h2>📊 성과 기록</h2>
+      <p>{records.length}건 기록 · {types.map(t=>t.ic+records.filter(r=>r.type===t.n).length).join(' ')}</p>
+    </div>
     {records.length>0&&<div className="card" style={{padding:16}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
         <p style={{fontSize:14,fontWeight:700}}>📊 성과 대시보드</p>
@@ -885,6 +1050,46 @@ function RecordView({records,setRecords,exportReport}){
       </div>)}
     </div>}
 
+    {/* ── Weekly Trend Chart ── */}
+    {(()=>{
+      // 최근 4주 데이터 계산
+      const now=getToday();const weeks=[];
+      for(let w=3;w>=0;w--){
+        const start=new Date(now);start.setDate(start.getDate()-w*7-now.getDay()+1);
+        const end=new Date(start);end.setDate(end.getDate()+4);
+        let blogDone=0,blogTotal=0,cafePosts=0;
+        for(let d=0;d<5;d++){
+          const dd=new Date(start);dd.setDate(dd.getDate()+d);const dk=getDK(dd);
+          const dt=tasks[dk]||[];
+          blogTotal+=dt.filter(t=>t.type==='blog').length;
+          blogDone+=dt.filter(t=>t.type==='blog'&&t.done).length;
+        }
+        cafePosts=posts.filter(p=>{
+          const pd=p.date?.split(' ')[0];if(!pd)return false;
+          return pd>=`${start.getMonth()+1}/${start.getDate()}`&&pd<=`${end.getMonth()+1}/${end.getDate()}`;
+        }).length;
+        const label=`${start.getMonth()+1}/${start.getDate()}`;
+        weeks.push({label,blogDone,blogTotal,cafePosts});
+      }
+      const maxVal=Math.max(...weeks.map(w=>Math.max(w.blogTotal,w.cafePosts)),1);
+      return <div className="card" style={{padding:16,background:'linear-gradient(135deg,#f8f7ff,#f0edff)',border:'1px solid var(--primary-l)'}}>
+        <p style={{fontSize:14,fontWeight:700,color:'var(--primary)',marginBottom:12}}>📈 주간 추이 (최근 4주)</p>
+        <div style={{display:'flex',gap:8,alignItems:'flex-end',height:100,marginBottom:8}}>
+          {weeks.map((w,i)=><div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+            <div style={{display:'flex',gap:2,alignItems:'flex-end',height:80,width:'100%',justifyContent:'center'}}>
+              <div style={{width:'35%',background:'linear-gradient(180deg,#6c5ce7,#a29bfe)',borderRadius:'4px 4px 0 0',height:`${Math.max((w.blogDone/maxVal)*70,4)}px`,transition:'height .5s'}} title={`블로그 ${w.blogDone}/${w.blogTotal}`}/>
+              <div style={{width:'35%',background:'linear-gradient(180deg,#ec4899,#f472b6)',borderRadius:'4px 4px 0 0',height:`${Math.max((w.cafePosts/maxVal)*70,4)}px`,transition:'height .5s'}} title={`카페 ${w.cafePosts}`}/>
+            </div>
+            <span style={{fontSize:10,color:'var(--text3)',fontWeight:600}}>{w.label}</span>
+          </div>)}
+        </div>
+        <div style={{display:'flex',gap:16,justifyContent:'center',fontSize:11}}>
+          <span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:10,height:10,borderRadius:3,background:'#6c5ce7'}}/>블로그</span>
+          <span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:10,height:10,borderRadius:3,background:'#ec4899'}}/>카페</span>
+        </div>
+      </div>;
+    })()}
+
     <div className="card" style={{padding:14}}>
       <p style={{fontSize:14,fontWeight:700,marginBottom:8}}>＋ 기록 추가</p>
       <div style={{display:'flex',gap:3,marginBottom:8,flexWrap:'wrap'}}>
@@ -912,6 +1117,58 @@ function RecordView({records,setRecords,exportReport}){
       </div>
     </div>})}
     {filtered.length===0&&records.length>0&&<div style={{textAlign:'center',padding:'30px',color:'var(--text3)'}}><p>검색 결과 없음</p></div>}
+  </div>);
+}
+
+/* ═══ RISK MANAGEMENT ═══ */
+function RiskView(){
+  const RISKS=[
+    {id:'legal',title:'변호사 검수 지연',ic:'⚖️',color:'var(--danger)',level:'높음',
+      desc:'변호사님 출장/재판으로 블로그 법률 검수가 밀릴 수 있음',
+      impact:'법률 오류 포함 글 발행 → 신뢰도 하락 + 징계 리스크',
+      actions:['검수 필요 글은 전날 미리 전달','기본 법률정보 글(자격조건/절차)은 자체 검수 가능 목록화','급할 땐 "본 글은 일반적 정보이며 개별 사안은 상담 필요" 면책문구 삽입','주 1회 검수 일괄 처리 요일 정하기 (목요일 추천)']},
+    {id:'tech',title:'기술 문제',ic:'💻',color:'var(--blue)',level:'중간',
+      desc:'블로그 에디터 오류, 이미지 업로드 실패, 대시보드 데이터 유실',
+      impact:'발행 지연 → 일일 목표 미달',
+      actions:['30초 자동백업 + JSON 수동백업 주 1회','클라우드 동기화 설정 → 기기 고장 대비','네이버 블로그 임시저장 생활화 (5분마다)','이미지는 미리 리사이즈(가로 860px) 후 업로드']},
+    {id:'internal',title:'급한 내부 요청',ic:'📢',color:'var(--warn)',level:'중간',
+      desc:'변호사님 급한 홈페이지 수정, 고객 대응 자료 요청 등',
+      impact:'마케팅 일정 밀림 → P0 업무 미완료',
+      actions:['오전(~11시)은 마케팅 보호시간으로 확보','급한 요청은 메모 탭에 기록 → 오후에 처리','P0 블로그 2개 먼저 완료 후 내부 요청 처리','반복 요청은 템플릿/자동화 만들기']},
+    {id:'quality',title:'콘텐츠 품질 이슈',ic:'📝',color:'var(--accent)',level:'낮음',
+      desc:'AI 생성 글이 너무 천편일률적, 카페글 광고티 남',
+      impact:'검색 순위 하락 + 카페 신고/삭제',
+      actions:['매주 금요일 발행 글 품질 점검 (회고 시)','카페글 검수 체크리스트 반드시 통과 후 등록','블로그 도입부는 반드시 수동 수정 (AI 느낌 제거)','월 1회 경쟁사 블로그 벤치마킹 → 차별화 포인트 업데이트','같은 구조 반복 방지: 서론 패턴 3개 이상 로테이션']}
+  ];
+  const levelColor={높음:'var(--danger)',중간:'var(--warn)',낮음:'var(--success)'};
+
+  return(<div>
+    <div className="section-header" style={{background:'linear-gradient(135deg,#dc2626,#ef4444)'}}>
+      <h2>🛡️ 리스크 관리</h2>
+      <p>4개 리스크 카테고리 · 사전 대비책</p>
+    </div>
+    {RISKS.map(r=><div key={r.id} className="card" style={{padding:14,borderLeft:`3px solid ${r.color}`}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:20}}>{r.ic}</span>
+          <div>
+            <p style={{fontSize:14,fontWeight:700}}>{r.title}</p>
+            <p style={{fontSize:11,color:'var(--text2)'}}>{r.desc}</p>
+          </div>
+        </div>
+        <span className="tag" style={{background:levelColor[r.level]+'18',color:levelColor[r.level],fontWeight:700}}>{r.level}</span>
+      </div>
+      <div style={{background:'var(--danger-l)',borderRadius:8,padding:8,marginBottom:8}}>
+        <p style={{fontSize:11,fontWeight:600,color:'var(--danger)'}}>⚠️ 영향: {r.impact}</p>
+      </div>
+      <div>
+        <p style={{fontSize:11,fontWeight:700,color:'var(--success)',marginBottom:4}}>✅ 대비책</p>
+        {r.actions.map((a,i)=><div key={i} style={{display:'flex',gap:6,marginBottom:3,alignItems:'flex-start'}}>
+          <span style={{fontSize:10,color:'var(--success)',marginTop:2,flexShrink:0}}>•</span>
+          <p style={{fontSize:12,color:'var(--text)',lineHeight:1.5}}>{a}</p>
+        </div>)}
+      </div>
+    </div>)}
   </div>);
 }
 
@@ -969,6 +1226,10 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
   const handleGhDisconnect=()=>{Cloud.disconnect();setGhToken('');setGhStatus('disconnected');setSyncMsg('')};
 
   return(<div>
+    <div className="section-header" style={{background:'linear-gradient(135deg,#6366f1,#8b5cf6)'}}>
+      <h2>⚙️ 설정</h2>
+      <p>동기화 · 백업 · 키워드 · 계정관리</p>
+    </div>
     {/* ── Quick Sync (Clipboard) ── */}
     <div className="card" style={{padding:16,borderLeft:'4px solid var(--accent)'}}>
       <p style={{fontSize:15,fontWeight:800,marginBottom:4}}>📋 빠른 동기화 (클립보드)</p>
@@ -1086,7 +1347,8 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
     {ep!==null&&<div className="modal-overlay" onClick={()=>setEp(null)}><div className="modal" onClick={e=>e.stopPropagation()}>
       <p style={{fontSize:16,fontWeight:800,marginBottom:16}}>🎭 페르소나 편집</p>
       {[{k:'name',l:'계정명',ph:'계정1: 민지'},{k:'emoji',l:'이모지',ph:'👩'},{k:'color',l:'색상',ph:'#ec4899'},{k:'age',l:'나이/성별',ph:'32세 여성'},{k:'job',l:'직업',ph:'중소기업 경리'},
-        {k:'tone',l:'말투',ph:'~거든요 체...',a:1},{k:'background',l:'배경',ph:'채무 상황...',a:1},{k:'style',l:'스타일',ph:'소심한 느낌...',a:1}
+        {k:'tone',l:'말투',ph:'~거든요 체...',a:1},{k:'background',l:'배경',ph:'채무 상황...',a:1},{k:'style',l:'스타일',ph:'소심한 느낌...',a:1},
+        {k:'typos',l:'맞춤법/띄어쓰기 패턴',ph:'됬다/됐다 혼용, 띄어쓰기 가끔 틀림...',a:1},{k:'ageStyle',l:'나이대별 문체',ph:'30대 여성: ㅠㅠ, ㅎㅎ 사용...',a:1}
       ].map(f=><div key={f.k} style={{marginBottom:8}}>
         <label style={{fontSize:11,fontWeight:700,color:'var(--primary)',display:'block',marginBottom:3}}>{f.l}</label>
         {f.a?<textarea value={pf[f.k]||''} onChange={e=>setPf(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} className="input" style={{minHeight:55,resize:'vertical'}}/>
