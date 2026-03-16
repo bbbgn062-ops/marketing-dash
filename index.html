@@ -686,8 +686,41 @@ function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,copy,copyId,cur
       {carry.map((t,i)=><div key={i} style={{background:'var(--danger-l)',borderRadius:8,padding:'6px 10px',marginBottom:3}}><p style={{fontSize:12,fontWeight:600,color:'var(--danger)'}}>{t.title}</p><p style={{fontSize:10,color:'var(--text3)'}}>{t.from} · {t.min}분</p></div>)}
     </div>}
 
+    {/* ── 오늘의 콘텐츠 브리프 (블로그 태스크에서 meta 추출) ── */}
+    {(()=>{
+      const blogTasks=tasks.filter(t=>t.type==='blog'&&t.meta);
+      if(blogTasks.length===0)return null;
+      return <div className="card" style={{padding:0,overflow:'hidden',marginBottom:10}}>
+        <div style={{background:'linear-gradient(135deg,#6c5ce7,#a29bfe)',padding:'12px 16px'}}>
+          <p style={{fontSize:14,fontWeight:800,color:'#fff'}}>📋 오늘의 콘텐츠 브리프</p>
+          <p style={{fontSize:11,color:'rgba(255,255,255,.7)'}}>블로그 {blogTasks.length}개 · 아래 키워드별 타겟/목차/SEO 확인</p>
+        </div>
+        <div style={{padding:12}}>
+          {blogTasks.map((t,i)=><div key={t.id} style={{background:i%2===0?'#f5f3ff':'#faf5ff',borderRadius:12,padding:12,marginBottom:i<blogTasks.length-1?8:0,border:'1px solid #ede9fe'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+              <p style={{fontSize:13,fontWeight:700,color:'#5b4cdb'}}>{t.title}</p>
+              <span className="tag" style={{background:t.done?'#ecfdf5':'#fef2f2',color:t.done?'#059669':'#dc2626'}}>{t.done?'완료':'미완료'}</span>
+            </div>
+            {t.meta&&<div style={{fontSize:11,lineHeight:1.8,color:'var(--text)'}}>
+              <p><span style={{background:'#ede9fe',padding:'1px 6px',borderRadius:4,fontWeight:700,color:'#5b4cdb',fontSize:10}}>부제</span> {t.meta.subtitle}</p>
+              <p><span style={{background:'#fef3c7',padding:'1px 6px',borderRadius:4,fontWeight:700,color:'#b45309',fontSize:10}}>타겟</span> {t.meta.target}</p>
+              <p><span style={{background:'#dbeafe',padding:'1px 6px',borderRadius:4,fontWeight:700,color:'#1d4ed8',fontSize:10}}>앵글</span> {t.meta.angle}</p>
+              <div style={{marginTop:6,background:'#fff',borderRadius:8,padding:8,border:'1px solid #f0f0f0'}}>
+                <p style={{fontSize:10,fontWeight:700,color:'#6c5ce7',marginBottom:4}}>📑 목차</p>
+                {(t.meta.toc||[]).map((item,j)=><p key={j} style={{fontSize:11,color:'var(--text2)',paddingLeft:4}}>{item}</p>)}
+              </div>
+              <div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:6}}>
+                {(t.meta.tags||[]).map((tag,j)=><span key={j} style={{background:'#f0edff',color:'#7c3aed',padding:'2px 6px',borderRadius:4,fontSize:10,fontWeight:600}}>{tag}</span>)}
+              </div>
+              <p style={{marginTop:4,fontSize:10,color:'var(--text3)'}}>🔑 SEO: {(t.meta.ltKws||[]).join(' | ')}</p>
+            </div>}
+          </div>)}
+        </div>
+      </div>;
+    })()}
+
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:'10px 0 8px',padding:'0 2px'}}>
-      <p style={{fontSize:14,fontWeight:700}}>{curUser==='hyerim'?'혜림':curUser==='taehyun'?'태현':'신입'}의 업무 <span style={{color:'var(--text3)',fontSize:12,fontWeight:500}}>({my.filter(t=>t.done).length}/{my.length})</span></p>
+      <p style={{fontSize:14,fontWeight:700}}>{curUser==='hyerim'?'혜림':curUser==='taehyun'?'태현':curUser}의 업무 <span style={{color:'var(--text3)',fontSize:12,fontWeight:500}}>({my.filter(t=>t.done).length}/{my.length})</span></p>
       <button onClick={()=>setAddMode(!addMode)} style={{padding:'5px 12px',borderRadius:8,border:'1px solid var(--border)',background:'#fff',color:'var(--text2)',fontSize:12,fontWeight:500,cursor:'pointer'}}>＋ 추가</button>
     </div>
 
@@ -1012,80 +1045,106 @@ function RecordView({records,setRecords,exportReport,tasks,posts}){
       <p>{records.length}건 기록 · {types.map(t=>t.ic+records.filter(r=>r.type===t.n).length).join(' ')}</p>
     </div>
     {records.length>0&&<div className="card" style={{padding:16}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-        <p style={{fontSize:14,fontWeight:700}}>📊 성과 대시보드</p>
-        <button onClick={exportReport} style={{padding:'5px 12px',borderRadius:8,border:'1px solid var(--border)',background:'#fff',color:'var(--text2)',fontSize:11,fontWeight:500,cursor:'pointer'}}>📄 리포트</button>
-      </div>
-      {/* Donut Chart + Stats */}
-      <div style={{display:'flex',gap:16,alignItems:'center',marginBottom:16,flexWrap:'wrap',justifyContent:'center'}}>
-        <svg width="130" height="130" viewBox="0 0 130 130" style={{flexShrink:0}}>
+      <p style={{fontSize:13,fontWeight:700,marginBottom:10}}>📋 기록 유형별 현황</p>
+      <div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap',justifyContent:'center'}}>
+        <svg width="110" height="110" viewBox="0 0 110 110" style={{flexShrink:0}}>
           {(()=>{const total=tc.reduce((s,t)=>s+t.cnt,0)||1;let cum=0;
             return tc.filter(t=>t.cnt>0).map((t,i)=>{
-              const pct=t.cnt/total;const r=50;const cx=65;const cy=65;
-              const startAngle=cum*2*Math.PI-Math.PI/2;
-              cum+=pct;
-              const endAngle=cum*2*Math.PI-Math.PI/2;
-              const large=pct>0.5?1:0;
+              const pct=t.cnt/total;const r=45;const cx=55;const cy=55;
+              const startAngle=cum*2*Math.PI-Math.PI/2;cum+=pct;
+              const endAngle=cum*2*Math.PI-Math.PI/2;const large=pct>0.5?1:0;
               const x1=cx+r*Math.cos(startAngle);const y1=cy+r*Math.sin(startAngle);
               const x2=cx+r*Math.cos(endAngle);const y2=cy+r*Math.sin(endAngle);
               return <path key={i} d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`} fill={t.c} opacity=".85" stroke="#fff" strokeWidth="2"/>;
-            });
-          })()}
-          <circle cx="65" cy="65" r="30" fill="white"/>
-          <text x="65" y="60" textAnchor="middle" fontSize="22" fontWeight="900" fill="var(--primary)">{records.length}</text>
-          <text x="65" y="76" textAnchor="middle" fontSize="9" fill="var(--text3)" fontWeight="600">총 기록</text>
+            })})()}
+          <circle cx="55" cy="55" r="25" fill="white"/>
+          <text x="55" y="52" textAnchor="middle" fontSize="18" fontWeight="900" fill="var(--primary)">{records.length}</text>
+          <text x="55" y="65" textAnchor="middle" fontSize="8" fill="var(--text3)" fontWeight="600">총 기록</text>
         </svg>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,flex:1,minWidth:180}}>
-          {tc.map((t,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:t.c+'0d',borderRadius:10,border:`1px solid ${t.c}15`}}>
-            <div style={{width:10,height:10,borderRadius:3,background:t.c,flexShrink:0}}/>
-            <div><p style={{fontSize:12,fontWeight:800,color:t.c}}>{t.cnt}건</p><p style={{fontSize:10,color:'var(--text3)'}}>{t.ic} {t.n}</p></div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,flex:1,minWidth:160}}>
+          {tc.map((t,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',background:t.c+'0a',borderRadius:8}}>
+            <div style={{width:8,height:8,borderRadius:3,background:t.c,flexShrink:0}}/>
+            <span style={{fontSize:11,fontWeight:700,color:t.c}}>{t.cnt}</span>
+            <span style={{fontSize:10,color:'var(--text3)'}}>{t.ic}{t.n}</span>
           </div>)}
         </div>
       </div>
-      {/* Bar Chart */}
-      {tc.map((t,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-        <span style={{fontSize:11,width:50,textAlign:'right',color:'var(--text2)',fontWeight:700}}>{t.ic}{t.n}</span>
-        <div style={{flex:1,height:20,background:'var(--bg2)',borderRadius:8,overflow:'hidden'}}><div className="chart-bar" style={{width:`${(t.cnt/mx)*100}%`,background:`linear-gradient(90deg,${t.c},${t.c}99)`,boxShadow:`0 2px 6px ${t.c}33`}}/></div>
-        <span style={{fontSize:12,fontWeight:900,color:t.c,width:28,textAlign:'right'}}>{t.cnt}</span>
-      </div>)}
     </div>}
 
-    {/* ── Weekly Trend Chart ── */}
+    {/* ── Weekly Trend + Stats Overview ── */}
     {(()=>{
-      // 최근 4주 데이터 계산
-      const now=getToday();const weeks=[];
+      const now2=getToday();const weeks=[];
       for(let w=3;w>=0;w--){
-        const start=new Date(now);start.setDate(start.getDate()-w*7-now.getDay()+1);
-        const end=new Date(start);end.setDate(end.getDate()+4);
-        let blogDone=0,blogTotal=0,cafePosts=0;
+        const start=new Date(now2);start.setDate(start.getDate()-w*7-now2.getDay()+1);
+        let blogDone=0,blogTotal=0,cafeDone=0,cafeTotal=0,allDone=0,allTotal=0;
         for(let d=0;d<5;d++){
-          const dd=new Date(start);dd.setDate(dd.getDate()+d);const dk=getDK(dd);
-          const dt=tasks[dk]||[];
+          const dd=new Date(start);dd.setDate(dd.getDate()+d);const dk2=getDK(dd);
+          const dt=tasks[dk2]||[];
           blogTotal+=dt.filter(t=>t.type==='blog').length;
           blogDone+=dt.filter(t=>t.type==='blog'&&t.done).length;
+          cafeTotal+=dt.filter(t=>t.type==='cafe').length;
+          cafeDone+=dt.filter(t=>t.type==='cafe'&&t.done).length;
+          allTotal+=dt.length;allDone+=dt.filter(t=>t.done).length;
         }
-        cafePosts=posts.filter(p=>{
-          const pd=p.date?.split(' ')[0];if(!pd)return false;
-          return pd>=`${start.getMonth()+1}/${start.getDate()}`&&pd<=`${end.getMonth()+1}/${end.getDate()}`;
-        }).length;
         const label=`${start.getMonth()+1}/${start.getDate()}`;
-        weeks.push({label,blogDone,blogTotal,cafePosts});
+        weeks.push({label,blogDone,blogTotal,cafeDone,cafeTotal,allDone,allTotal,
+          cafePosted:posts.filter(p=>p.date&&p.date.includes(label.split('/')[0]+'/')).length});
       }
-      const maxVal=Math.max(...weeks.map(w=>Math.max(w.blogTotal,w.cafePosts)),1);
-      return <div className="card" style={{padding:16,background:'linear-gradient(135deg,#f8f7ff,#f0edff)',border:'1px solid var(--primary-l)'}}>
-        <p style={{fontSize:14,fontWeight:700,color:'var(--primary)',marginBottom:12}}>📈 주간 추이 (최근 4주)</p>
-        <div style={{display:'flex',gap:8,alignItems:'flex-end',height:100,marginBottom:8}}>
-          {weeks.map((w,i)=><div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
-            <div style={{display:'flex',gap:2,alignItems:'flex-end',height:80,width:'100%',justifyContent:'center'}}>
-              <div style={{width:'35%',background:'linear-gradient(180deg,#6c5ce7,#a29bfe)',borderRadius:'4px 4px 0 0',height:`${Math.max((w.blogDone/maxVal)*70,4)}px`,transition:'height .5s'}} title={`블로그 ${w.blogDone}/${w.blogTotal}`}/>
-              <div style={{width:'35%',background:'linear-gradient(180deg,#ec4899,#f472b6)',borderRadius:'4px 4px 0 0',height:`${Math.max((w.cafePosts/maxVal)*70,4)}px`,transition:'height .5s'}} title={`카페 ${w.cafePosts}`}/>
-            </div>
-            <span style={{fontSize:10,color:'var(--text3)',fontWeight:600}}>{w.label}</span>
+      const maxBlog=Math.max(...weeks.map(w=>w.blogTotal),10);
+      const totalBlogDone=weeks.reduce((s,w)=>s+w.blogDone,0);
+      const totalBlogAll=weeks.reduce((s,w)=>s+w.blogTotal,0);
+      const totalAllDone=weeks.reduce((s,w)=>s+w.allDone,0);
+      const totalAll=weeks.reduce((s,w)=>s+w.allTotal,0);
+
+      return <div className="card" style={{padding:0,overflow:'hidden'}}>
+        <div style={{background:'linear-gradient(135deg,#312e81,#4338ca)',padding:'14px 16px',color:'#fff'}}>
+          <p style={{fontSize:14,fontWeight:800}}>📈 성과 현황판</p>
+          <p style={{fontSize:11,opacity:.7}}>최근 4주 기준 · 업무 완료율 {totalAll?Math.round(totalAllDone/totalAll*100):0}%</p>
+        </div>
+        {/* KPI Cards */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,padding:'12px 14px'}}>
+          {[
+            {v:totalBlogDone,l:'블로그 완료',sub:`/${totalBlogAll} 배정`,c:'#6c5ce7'},
+            {v:posts.length,l:'카페 누적',sub:'게시글',c:'#ec4899'},
+            {v:posts.reduce((s,p)=>s+(p.views||0),0),l:'총 조회수',sub:'카페 기준',c:'#0ea5e9'},
+            {v:`${totalAll?Math.round(totalAllDone/totalAll*100):0}%`,l:'전체 완료율',sub:`${totalAllDone}/${totalAll}건`,c:'#059669'}
+          ].map((s,i)=><div key={i} style={{textAlign:'center',padding:'10px 4px',background:s.c+'08',borderRadius:10,border:`1px solid ${s.c}15`}}>
+            <p style={{fontSize:20,fontWeight:900,color:s.c}}>{s.v}</p>
+            <p style={{fontSize:10,fontWeight:600,color:'var(--text2)',marginTop:2}}>{s.l}</p>
+            <p style={{fontSize:9,color:'var(--text3)'}}>{s.sub}</p>
           </div>)}
         </div>
-        <div style={{display:'flex',gap:16,justifyContent:'center',fontSize:11}}>
-          <span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:10,height:10,borderRadius:3,background:'#6c5ce7'}}/>블로그</span>
-          <span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:10,height:10,borderRadius:3,background:'#ec4899'}}/>카페</span>
+        {/* Bar Chart */}
+        <div style={{padding:'8px 14px 14px'}}>
+          <p style={{fontSize:12,fontWeight:700,color:'var(--text)',marginBottom:8}}>주간 블로그 발행 추이</p>
+          <div style={{display:'flex',gap:6,alignItems:'flex-end',height:110,marginBottom:6}}>
+            {weeks.map((w,i)=>{
+              const isThis=i===weeks.length-1;
+              return <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                <span style={{fontSize:10,fontWeight:800,color:w.blogDone>0?'#6c5ce7':'var(--text4)'}}>{w.blogDone}</span>
+                <div style={{width:'100%',display:'flex',gap:2,alignItems:'flex-end',height:70,justifyContent:'center'}}>
+                  {/* Blog total (light) */}
+                  <div style={{width:'40%',background:'#e9e5ff',borderRadius:'4px 4px 0 0',height:`${Math.max((w.blogTotal/maxBlog)*65,6)}px`,position:'relative'}}>
+                    {/* Blog done (dark overlay) */}
+                    <div style={{position:'absolute',bottom:0,left:0,right:0,background:'linear-gradient(180deg,#6c5ce7,#a29bfe)',borderRadius:'4px 4px 0 0',height:`${w.blogTotal?Math.max((w.blogDone/w.blogTotal)*100,0):0}%`,transition:'height .5s'}}/>
+                  </div>
+                  <div style={{width:'40%',background:w.cafeDone>0?'linear-gradient(180deg,#ec4899,#f472b6)':'#fce7f3',borderRadius:'4px 4px 0 0',height:`${Math.max(((w.cafeDone||0)/maxBlog)*65,6)}px`,transition:'height .5s'}}/>
+                </div>
+                <div style={{width:'100%',textAlign:'center',padding:'4px 0',background:isThis?'#ede9fe':'transparent',borderRadius:6}}>
+                  <span style={{fontSize:10,color:isThis?'#5b4cdb':'var(--text3)',fontWeight:isThis?700:500}}>{w.label}</span>
+                  {isThis&&<p style={{fontSize:8,color:'#5b4cdb',fontWeight:700}}>이번주</p>}
+                </div>
+              </div>;
+            })}
+          </div>
+          <div style={{display:'flex',gap:12,justifyContent:'center',fontSize:10,padding:'6px 0',background:'#f8f7ff',borderRadius:6}}>
+            <span style={{display:'flex',alignItems:'center',gap:3}}><span style={{width:8,height:8,borderRadius:2,background:'#6c5ce7'}}/>블로그 완료</span>
+            <span style={{display:'flex',alignItems:'center',gap:3}}><span style={{width:8,height:8,borderRadius:2,background:'#e9e5ff'}}/>블로그 배정</span>
+            <span style={{display:'flex',alignItems:'center',gap:3}}><span style={{width:8,height:8,borderRadius:2,background:'#ec4899'}}/>카페</span>
+          </div>
+        </div>
+        <div style={{padding:'0 14px 14px'}}>
+          <button onClick={exportReport} className="btn btn-primary" style={{width:'100%',padding:'12px'}}>📄 월간 성과 리포트 다운로드</button>
         </div>
       </div>;
     })()}
