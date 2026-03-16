@@ -7,8 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<!-- GitHub Gist Sync - no external dependencies -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -130,28 +129,50 @@ const S={
   clear(){const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('rh_'))ks.push(k)}ks.forEach(k=>localStorage.removeItem(k));this._cache={}}
 };
 
-/* ═══ CLOUD SYNC (Firebase) ═══ */
+/* ═══ CLOUD SYNC (GitHub Gist) ═══ */
 const Cloud={
-  db:null,roomKey:null,active:false,listeners:[],
-  init(config,roomKey){
-    try{
-      if(!firebase.apps.length)firebase.initializeApp(config);
-      this.db=firebase.database();this.roomKey=roomKey;this.active=true;
-      console.log('[Cloud] Connected:',roomKey);return true;
-    }catch(e){console.error('[Cloud] Init failed:',e);this.active=false;return false}
+  token:null,gistId:null,active:false,
+  init(token,gistId){
+    this.token=token;this.gistId=gistId;this.active=!!(token);
+    return this.active;
   },
-  push(){
-    if(!this.active||!this.db)return Promise.resolve(false);
+  async createGist(){
+    if(!this.token)return null;
+    const d=S.exportAll();
+    const res=await fetch('https://api.github.com/gists',{
+      method:'POST',
+      headers:{'Authorization':'token '+this.token,'Content-Type':'application/json'},
+      body:JSON.stringify({description:'리셋회생 마케팅 데이터',public:false,files:{'data.json':{content:JSON.stringify(d,null,2)}}})
+    });
+    if(!res.ok)return null;
+    const g=await res.json();this.gistId=g.id;this.active=true;return g.id;
+  },
+  async push(){
+    if(!this.active||!this.token||!this.gistId)return false;
     const d=S.exportAll();d._pushTime=new Date().toISOString();
-    return this.db.ref('rooms/'+this.roomKey).set(d).then(()=>true).catch(e=>{console.error('[Cloud] Push failed:',e);return false});
+    try{
+      const res=await fetch('https://api.github.com/gists/'+this.gistId,{
+        method:'PATCH',
+        headers:{'Authorization':'token '+this.token,'Content-Type':'application/json'},
+        body:JSON.stringify({files:{'data.json':{content:JSON.stringify(d,null,2)}}})
+      });
+      return res.ok;
+    }catch(e){console.error('[Cloud] Push failed:',e);return false}
   },
-  pull(){
-    if(!this.active||!this.db)return Promise.resolve(null);
-    return this.db.ref('rooms/'+this.roomKey).once('value').then(snap=>{
-      const d=snap.val();if(d){S.importAll(d);return d}return null;
-    }).catch(e=>{console.error('[Cloud] Pull failed:',e);return null});
+  async pull(){
+    if(!this.active||!this.token||!this.gistId)return null;
+    try{
+      const res=await fetch('https://api.github.com/gists/'+this.gistId,{
+        headers:{'Authorization':'token '+this.token}
+      });
+      if(!res.ok)return null;
+      const g=await res.json();
+      const content=g.files?.['data.json']?.content;
+      if(!content)return null;
+      const d=JSON.parse(content);S.importAll(d);return d;
+    }catch(e){console.error('[Cloud] Pull failed:',e);return null}
   },
-  disconnect(){this.active=false;this.db=null;this.roomKey=null}
+  disconnect(){this.active=false;this.token=null;this.gistId=null}
 };
 
 /* ═══ CLIPBOARD SYNC ═══ */
@@ -301,15 +322,14 @@ function App(){
   const[copyId,setCopyId]=useState('');
   const[saved,setSaved]=useState(false);
   const[syncMsg,setSyncMsg]=useState('');
-  const[cloudCfg,setCloudCfg]=useP('cloudCfg',null);
-  const[cloudRoom,setCloudRoom]=useP('cloudRoom','');
+  const[ghToken,setGhToken]=useP('ghToken','');
+  const[gistId,setGistId]=useP('gistId','');
   const fileRef=useRef(null);
 
-  // Firebase auto-connect on load
+  // GitHub Gist auto-connect on load
   useEffect(()=>{
-    if(cloudCfg&&cloudRoom){
-      const ok=Cloud.init(cloudCfg,cloudRoom);
-      if(ok){Cloud.pull().then(d=>{if(d)location.reload()})}
+    if(ghToken&&gistId){
+      Cloud.init(ghToken,gistId);
     }
   },[]);
 
@@ -318,7 +338,7 @@ function App(){
   const cloudPush=useCallback(()=>{
     if(!Cloud.active)return;
     clearTimeout(pushTimer.current);
-    pushTimer.current=setTimeout(()=>{Cloud.push()},3000);
+    pushTimer.current=setTimeout(()=>{Cloud.push()},5000);
   },[]);
 
   // Auto-backup every 60s
@@ -524,7 +544,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
       {tab==='cafe'&&<CafeView copy={copy} copyId={copyId} posts={posts} setPosts={setPosts} personas={personas}/>}
       {tab==='memo'&&<MemoView memos={memos} setMemos={setMemos} curUser={curUser}/>}
       {tab==='record'&&<RecordView records={records} setRecords={setRecords} exportReport={exportReport}/>}
-      {tab==='settings'&&<SettingsView keywords={keywords} setKeywords={setKeywords} personas={personas} setPersonas={setPersonas} doExport={doExport} doImport={doImport} fileRef={fileRef} cloudCfg={cloudCfg} setCloudCfg={setCloudCfg} cloudRoom={cloudRoom} setCloudRoom={setCloudRoom} syncMsg={syncMsg} setSyncMsg={setSyncMsg} cloudPush={cloudPush}/>}
+      {tab==='settings'&&<SettingsView keywords={keywords} setKeywords={setKeywords} personas={personas} setPersonas={setPersonas} doExport={doExport} doImport={doImport} fileRef={fileRef} ghToken={ghToken} setGhToken={setGhToken} gistId={gistId} setGistId={setGistId} syncMsg={syncMsg} setSyncMsg={setSyncMsg} cloudPush={cloudPush}/>}
     </div>
   );
 }
@@ -904,13 +924,12 @@ function RecordView({records,setRecords,exportReport}){
 }
 
 /* ═══ SETTINGS ═══ */
-function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImport,fileRef,cloudCfg,setCloudCfg,cloudRoom,setCloudRoom,syncMsg,setSyncMsg,cloudPush}){
+function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImport,fileRef,ghToken,setGhToken,gistId,setGistId,syncMsg,setSyncMsg,cloudPush}){
   const[nk,setNk]=useState('');const[ep,setEp]=useState(null);const[pf,setPf]=useState({});
   const[clipTxt,setClipTxt]=useState('');const[clipCopied,setClipCopied]=useState(false);
-  const[showGuide,setShowGuide]=useState(false);
-  const[fbCfgTxt,setFbCfgTxt]=useState(cloudCfg?JSON.stringify(cloudCfg,null,2):'');
-  const[fbRoom,setFbRoom]=useState(cloudRoom||('rh-'+Math.random().toString(36).slice(2,10)));
-  const[fbStatus,setFbStatus]=useState(Cloud.active?'connected':'disconnected');
+  const[tokenInput,setTokenInput]=useState(ghToken||'');
+  const[gistInput,setGistInput]=useState(gistId||'');
+  const[ghStatus,setGhStatus]=useState(Cloud.active?'connected':'disconnected');
 
   const addKw=()=>{if(!nk.trim()||keywords.includes(nk.trim()))return;setKeywords(p=>[...p,nk.trim()]);setNk('')};
   const startEdit=(p,i)=>{setEp(i);setPf({...p})};
@@ -922,29 +941,38 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
   const handleClipCopy=async()=>{const ok=await ClipSync.copyToClip();setClipCopied(ok);setTimeout(()=>setClipCopied(false),2500)};
   const handleClipRestore=()=>{if(!clipTxt.trim())return;const ok=ClipSync.restore(clipTxt);if(ok){alert('복원 성공! 새로고침합니다.');location.reload()}else{alert('데이터 형식 오류. 복사한 텍스트를 정확히 붙여넣으세요.')}};
 
-  // Firebase connect
-  const handleFirebaseConnect=()=>{
-    try{
-      const cfg=JSON.parse(fbCfgTxt);
-      const ok=Cloud.init(cfg,fbRoom);
-      if(ok){
-        setCloudCfg(cfg);setCloudRoom(fbRoom);setFbStatus('connected');
-        setSyncMsg('Firebase 연결 성공!');setTimeout(()=>setSyncMsg(''),2500);
-        Cloud.push();
-      }else{setFbStatus('error');setSyncMsg('연결 실패')}
-    }catch{setSyncMsg('설정 JSON 형식 오류');setFbStatus('error')}
+  // GitHub Gist connect
+  const handleGhConnect=async()=>{
+    if(!tokenInput.trim()){setSyncMsg('토큰을 입력하세요');return}
+    setSyncMsg('연결 중...');
+    Cloud.init(tokenInput.trim(),gistInput.trim()||null);
+    if(gistInput.trim()){
+      // 기존 Gist 연결
+      const d=await Cloud.pull();
+      if(d){setGhToken(tokenInput.trim());setGistId(gistInput.trim());setGhStatus('connected');setSyncMsg('연결 성공! 데이터 내려받음.');setTimeout(()=>location.reload(),1000)}
+      else{setGhStatus('error');setSyncMsg('Gist를 찾을 수 없거나 토큰이 잘못됨')}
+    }else{
+      // 새 Gist 생성
+      const newId=await Cloud.createGist();
+      if(newId){setGhToken(tokenInput.trim());setGistId(newId);Cloud.gistId=newId;setGistInput(newId);setGhStatus('connected');setSyncMsg('새 클라우드 저장소 생성 완료!')}
+      else{setGhStatus('error');setSyncMsg('생성 실패. 토큰을 확인하세요')}
+    }
+    setTimeout(()=>setSyncMsg(''),3000);
   };
-  const handleFirebasePull=()=>{
+  const handleGhPull=async()=>{
     if(!Cloud.active)return;
     setSyncMsg('데이터 내려받는 중...');
-    Cloud.pull().then(d=>{if(d){setSyncMsg('동기화 완료! 새로고침합니다.');setTimeout(()=>location.reload(),800)}else{setSyncMsg('서버에 데이터 없음')}});
+    const d=await Cloud.pull();
+    if(d){setSyncMsg('동기화 완료! 새로고침합니다.');setTimeout(()=>location.reload(),800)}
+    else{setSyncMsg('데이터 없음');setTimeout(()=>setSyncMsg(''),2000)}
   };
-  const handleFirebasePush=()=>{
+  const handleGhPush=async()=>{
     if(!Cloud.active)return;
     setSyncMsg('업로드 중...');
-    Cloud.push().then(ok=>{setSyncMsg(ok?'업로드 완료!':'업로드 실패');setTimeout(()=>setSyncMsg(''),2000)});
+    const ok=await Cloud.push();
+    setSyncMsg(ok?'업로드 완료!':'업로드 실패');setTimeout(()=>setSyncMsg(''),2000);
   };
-  const handleFirebaseDisconnect=()=>{Cloud.disconnect();setCloudCfg(null);setCloudRoom('');setFbStatus('disconnected');setSyncMsg('')};
+  const handleGhDisconnect=()=>{Cloud.disconnect();setGhToken('');setGistId('');setGhStatus('disconnected');setSyncMsg('')};
 
   return(<div>
     {/* ── Quick Sync (Clipboard) ── */}
@@ -971,78 +999,50 @@ function SettingsView({keywords,setKeywords,personas,setPersonas,doExport,doImpo
       </div>
     </div>
 
-    {/* ── Cloud Sync (Firebase) ── */}
-    <div className="card" style={{padding:16,borderLeft:'4px solid #f59e0b'}}>
+    {/* ── Cloud Sync (GitHub Gist) ── */}
+    <div className="card" style={{padding:16,borderLeft:'4px solid var(--warn)'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
         <p style={{fontSize:15,fontWeight:800}}>☁️ 클라우드 동기화</p>
         <span style={{fontSize:11,padding:'3px 10px',borderRadius:8,fontWeight:700,
-          background:fbStatus==='connected'?'#ecfdf5':fbStatus==='error'?'#fef2f2':'#f8fafc',
-          color:fbStatus==='connected'?'#059669':fbStatus==='error'?'#ef4444':'#94a3b8'}}>
-          {fbStatus==='connected'?'🟢 연결됨':fbStatus==='error'?'🔴 오류':'⚪ 미연결'}
+          background:ghStatus==='connected'?'var(--success-l)':ghStatus==='error'?'var(--danger-l)':'#f8fafc',
+          color:ghStatus==='connected'?'var(--success)':ghStatus==='error'?'var(--danger)':'var(--text3)'}}>
+          {ghStatus==='connected'?'🟢 연결됨':ghStatus==='error'?'🔴 오류':'⚪ 미연결'}
         </span>
       </div>
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:12,lineHeight:1.7}}>
-        Firebase(무료)를 연결하면 여러 기기에서 자동으로 데이터가 동기화됩니다. 링크(방 키)를 아는 사람만 접근 가능합니다.
+        GitHub 계정으로 여러 기기에서 데이터를 동기화합니다. 이미 발급된 토큰을 입력하면 끝!
       </p>
 
-      {fbStatus==='connected'?<div>
-        <div style={{background:'#ecfdf5',borderRadius:10,padding:12,marginBottom:8}}>
-          <p style={{fontSize:12,fontWeight:700,color:'#065f46',marginBottom:4}}>✅ 클라우드 연결됨</p>
-          <p style={{fontSize:11,color:'#047857'}}>방 키: <code style={{background:'#d1fae5',padding:'2px 6px',borderRadius:4,fontWeight:700}}>{cloudRoom}</code></p>
+      {ghStatus==='connected'?<div>
+        <div style={{background:'var(--success-l)',borderRadius:10,padding:12,marginBottom:8}}>
+          <p style={{fontSize:12,fontWeight:700,color:'var(--success)',marginBottom:4}}>✅ 클라우드 연결됨</p>
+          <p style={{fontSize:11,color:'#047857'}}>Gist ID: <code style={{background:'#d1fae5',padding:'2px 6px',borderRadius:4,fontWeight:700,fontSize:10}}>{gistId?.slice(0,12)}...</code></p>
+          <p style={{fontSize:10,color:'var(--text3)',marginTop:4}}>다른 기기에서 같은 토큰 + 이 Gist ID를 입력하면 동기화됩니다</p>
         </div>
         {syncMsg&&<p style={{fontSize:12,fontWeight:600,color:'var(--primary)',marginBottom:8,textAlign:'center'}}>{syncMsg}</p>}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:6}}>
-          <button onClick={handleFirebasePush} className="btn btn-primary" style={{justifyContent:'center'}}>⬆️ 업로드</button>
-          <button onClick={handleFirebasePull} className="btn btn-success" style={{justifyContent:'center'}}>⬇️ 내려받기</button>
+          <button onClick={handleGhPush} className="btn btn-primary" style={{justifyContent:'center'}}>⬆️ 업로드</button>
+          <button onClick={handleGhPull} className="btn btn-success" style={{justifyContent:'center'}}>⬇️ 내려받기</button>
         </div>
-        <button onClick={handleFirebaseDisconnect} className="btn btn-danger" style={{width:'100%'}}>연결 해제</button>
+        <button onClick={()=>{navigator.clipboard?.writeText(gistId);setSyncMsg('Gist ID 복사됨!');setTimeout(()=>setSyncMsg(''),1500)}} className="btn btn-ghost" style={{width:'100%',marginBottom:6}}>📋 Gist ID 복사 (다른 기기용)</button>
+        <button onClick={handleGhDisconnect} className="btn btn-danger" style={{width:'100%'}}>연결 해제</button>
       </div>
       :<div>
-        <button onClick={()=>setShowGuide(!showGuide)} className="btn btn-ghost" style={{width:'100%',marginBottom:10}}>
-          {showGuide?'▲ 가이드 접기':'📖 Firebase 무료 설정 가이드 (5분)'}
-        </button>
-
-        {showGuide&&<div style={{background:'#f8f9fc',borderRadius:12,padding:14,marginBottom:12,border:'1px solid var(--border)'}}>
-          <p style={{fontSize:13,fontWeight:800,color:'var(--primary)',marginBottom:10}}>🔥 Firebase 무료 설정 (한번만 하면 끝!)</p>
-          <div style={{fontSize:12,color:'var(--text)',lineHeight:2}}>
-            {[
-              {s:'1️⃣',t:'firebase.google.com 접속 → "시작하기"'},
-              {s:'2️⃣',t:'Google 계정 로그인 (Gmail 계정이면 OK)'},
-              {s:'3️⃣',t:'"프로젝트 추가" → 이름 아무거나 (예: "reset-marketing") → 만들기'},
-              {s:'4️⃣',t:'왼쪽 메뉴 "빌드" → "Realtime Database" → "데이터베이스 만들기"'},
-              {s:'5️⃣',t:'위치: "싱가포르" 선택 → "테스트 모드에서 시작" 선택 → 사용 설정'},
-              {s:'6️⃣',t:'프로젝트 설정(톱니바퀴⚙️) → 일반 → 하단 "앱 추가" → 웹(</>) 아이콘'},
-              {s:'7️⃣',t:'앱 이름 아무거나 → "등록" → 나오는 firebaseConfig 코드 복사'},
-            ].map((x,i)=><div key={i} style={{display:'flex',gap:8,alignItems:'flex-start',marginBottom:4}}>
-              <span style={{flexShrink:0,fontSize:13}}>{x.s}</span>
-              <span>{x.t}</span>
-            </div>)}
-          </div>
-          <div style={{marginTop:8,background:'#fffbeb',borderRadius:8,padding:10}}>
-            <p style={{fontSize:11,fontWeight:700,color:'#92400e'}}>⚠️ 7번에서 복사할 코드 예시:</p>
-            <pre style={{fontSize:10,color:'#854d0e',marginTop:4,lineHeight:1.6,whiteSpace:'pre-wrap'}}>{`{
-  "apiKey": "AIzaSy...",
-  "authDomain": "reset-marketing.firebaseapp.com",
-  "databaseURL": "https://reset-marketing-default-rtdb.asia-southeast1.firebasedatabase.app",
-  "projectId": "reset-marketing",
-  "storageBucket": "reset-marketing.appspot.com",
-  "messagingSenderId": "123456789",
-  "appId": "1:123456789:web:abc..."
-}`}</pre>
-          </div>
-        </div>}
-
+        <div style={{background:'var(--accent-l)',borderRadius:10,padding:12,marginBottom:10}}>
+          <p style={{fontSize:12,fontWeight:700,color:'var(--primary)',marginBottom:4}}>💡 이미 토큰이 있다면 바로 입력!</p>
+          <p style={{fontSize:11,color:'var(--text2)',lineHeight:1.7}}>① 토큰 입력 → ② "연결" 클릭 → 자동으로 클라우드 저장소가 생성됩니다. 다른 기기에서는 같은 토큰 + Gist ID를 입력하면 동기화!</p>
+        </div>
         <div style={{marginBottom:8}}>
-          <label style={{fontSize:11,fontWeight:700,color:'var(--text2)',display:'block',marginBottom:4}}>Firebase 설정 (JSON)</label>
-          <textarea value={fbCfgTxt} onChange={e=>setFbCfgTxt(e.target.value)} placeholder='Firebase 콘솔에서 복사한 config를 붙여넣기...' className="input" style={{minHeight:80,resize:'vertical',fontSize:11,fontFamily:'monospace'}}/>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--text2)',display:'block',marginBottom:4}}>GitHub Token</label>
+          <input value={tokenInput} onChange={e=>setTokenInput(e.target.value)} placeholder='ghp_xxxxx...' className="input" type="password" style={{fontSize:13,fontFamily:'monospace'}}/>
         </div>
         <div style={{marginBottom:10}}>
-          <label style={{fontSize:11,fontWeight:700,color:'var(--text2)',display:'block',marginBottom:4}}>방 키 (같은 키를 사용하는 기기끼리 동기화)</label>
-          <input value={fbRoom} onChange={e=>setFbRoom(e.target.value)} className="input" style={{fontSize:13,fontFamily:'monospace'}}/>
-          <p style={{fontSize:10,color:'var(--text3)',marginTop:3}}>자동 생성됨. 다른 기기에서도 동일한 방 키를 입력하세요.</p>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--text2)',display:'block',marginBottom:4}}>Gist ID (두 번째 기기부터 입력)</label>
+          <input value={gistInput} onChange={e=>setGistInput(e.target.value)} placeholder='비워두면 새로 생성됨' className="input" style={{fontSize:13,fontFamily:'monospace'}}/>
+          <p style={{fontSize:10,color:'var(--text3)',marginTop:3}}>첫 번째 기기에서는 비워두세요. 자동 생성 후 ID가 표시됩니다.</p>
         </div>
         {syncMsg&&<p style={{fontSize:12,fontWeight:600,color:'var(--danger)',marginBottom:8,textAlign:'center'}}>{syncMsg}</p>}
-        <button onClick={handleFirebaseConnect} className="btn btn-primary" style={{width:'100%',padding:'14px'}} disabled={!fbCfgTxt.trim()}>🔗 Firebase 연결</button>
+        <button onClick={handleGhConnect} className="btn btn-primary" style={{width:'100%',padding:'14px'}} disabled={!tokenInput.trim()}>🔗 연결</button>
       </div>}
     </div>
 
