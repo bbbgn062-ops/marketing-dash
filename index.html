@@ -463,6 +463,7 @@ function genBlogGuide(kw,num){
   return {subtitle,target,angle,toc,tocDetail,tags:tags.slice(0,7),ltKws,cta,cautions,intro,kwType};
 }
 
+const TASK_VER=2; // bump this to force-regenerate cached tasks
 function genTasks(date,kws,pers){
   const s=date.getDate()+date.getMonth()*31;const dow=date.getDay();const dk=getDK(date);
   if(dow===0||dow===6)return[];
@@ -585,8 +586,15 @@ function App(){
 
   const getDayTasks=date=>{
     const dk=getDK(date);
-    if(!tasks[dk]){const def=genTasks(date,keywords,personas);setTasks(p=>({...p,[dk]:def}));return def}
-    return tasks[dk];
+    const existing=tasks[dk];
+    // Auto-regenerate if: no tasks, or old-format tasks missing meta.tocDetail
+    const needsRegen=!existing || (Array.isArray(existing) && existing.length>0 && existing.some(t=>t.type==='blog'&&(!t.meta||!t.meta.tocDetail)));
+    if(needsRegen){
+      const def=genTasks(date,keywords,personas);
+      setTasks(p=>({...p,[dk]:def}));
+      return def;
+    }
+    return existing;
   };
 
   const allDays=wd.map(d=>({date:d,dk:getDK(d),tasks:getDayTasks(d)}));
