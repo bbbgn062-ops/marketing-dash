@@ -31,12 +31,12 @@
 body{font-family:'Pretendard','Noto Sans KR',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 button,input,textarea,select{font-family:inherit;-webkit-tap-highlight-color:transparent}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--text4);border-radius:9px}::-webkit-scrollbar-thumb:hover{background:var(--text3)}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(91,76,219,.08),0 2px 8px rgba(91,76,219,.06);border:1px solid rgba(91,76,219,.1);margin-bottom:10px;overflow:hidden;transition:box-shadow .2s ease,transform .2s ease}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(91,76,219,.08),0 2px 8px rgba(91,76,219,.06);border:1px solid rgba(91,76,219,.1);margin-bottom:14px;overflow:hidden;transition:box-shadow .2s ease,transform .2s ease;padding:2px}
 .card:hover{box-shadow:0 4px 16px rgba(91,76,219,.14)}
-.section-header{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;position:relative;overflow:hidden}
+.section-header{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-radius:var(--radius);padding:20px 22px;margin-bottom:16px;position:relative;overflow:hidden}
 .section-header::after{content:'';position:absolute;top:-50%;right:-20%;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08)}
-.section-header h2{font-size:16px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
-.section-header p{font-size:11px;opacity:.8;font-weight:400}
+.section-header h2{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-bottom:3px}
+.section-header p{font-size:12px;opacity:.85;font-weight:500}
 .section-divider{height:2px;background:linear-gradient(90deg,var(--primary-l),var(--bg2),var(--primary-l));margin:16px 0;border-radius:2px}
 .subsection{background:var(--primary-xl);border-radius:var(--radius);padding:14px;margin-bottom:10px;border:1px solid var(--primary-l)}
 .btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;font-weight:600;font-size:13px;cursor:pointer;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:5px;letter-spacing:-.01em}
@@ -61,11 +61,11 @@ button,input,textarea,select{font-family:inherit;-webkit-tap-highlight-color:tra
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .modal{background:#fff;border-radius:20px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:var(--shadow-lg)}
-.stat-card{background:linear-gradient(135deg,#fff 60%,var(--primary-xl));border-radius:14px;padding:14px 10px;text-align:center;border:1px solid var(--border);transition:all .2s}
+.stat-card{background:linear-gradient(135deg,#fff 60%,var(--primary-xl));border-radius:14px;padding:16px 12px;text-align:center;border:1px solid var(--border);transition:all .2s}
 .stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
-.stat-val{font-size:24px;font-weight:800;line-height:1;color:var(--primary)}
-.stat-label{font-size:10px;color:var(--text3);margin-top:4px;font-weight:500}
-.tab-btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.stat-val{font-size:26px;font-weight:800;line-height:1;color:var(--primary)}
+.stat-label{font-size:11px;color:var(--text3);margin-top:5px;font-weight:500}
+.tab-btn{padding:9px 14px;border-radius:var(--radius-sm);border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
 .saved-badge{position:fixed;top:16px;right:16px;background:var(--success);color:#fff;padding:10px 18px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;z-index:300;animation:slideIn .25s ease-out;box-shadow:0 4px 12px rgba(5,150,105,.25)}
 @keyframes slideIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -606,10 +606,10 @@ function App(){
   const addTask=(dk,task)=>setTasks(p=>({...p,[dk]:[...(p[dk]||[]),task]}));
   const copy=(txt,id)=>{navigator.clipboard?.writeText(txt);setCopyId(id);setTimeout(()=>setCopyId(''),1500)};
 
-  // Carry-over
+  // Carry-over: P0 + P1 미완료 → 오늘로 자동 이월 + 알림
   const carry=useMemo(()=>{
     if(!isThisWeek)return[];const c=[];const ti=now.getDay()-1;
-    for(let i=0;i<ti&&i<selIdx;i++){(allDays[i]?.tasks||[]).forEach(t=>{if(!t.done&&t.p==='P0'&&t.type!=='meet')c.push({...t,from:DN[allDays[i].date.getDay()]+'요일'})})}
+    for(let i=0;i<ti&&i<selIdx;i++){(allDays[i]?.tasks||[]).forEach(t=>{if(!t.done&&(t.p==='P0'||t.p==='P1')&&t.type!=='meet')c.push({...t,from:DN[allDays[i].date.getDay()]+'요일',fromDK:allDays[i].dk})})}
     return c;
   },[allDays,selIdx,isThisWeek]);
 
@@ -705,9 +705,12 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
     const a=document.createElement('a');a.href=url;a.download=`마케팅_월간리포트_${todayDK}.html`;a.click();URL.revokeObjectURL(url);
   };
 
+  const[showEmergency,setShowEmergency]=useState(false);
+
   const tabs=[
     {id:'today',l:'오늘',ic:'☀️'},
     {id:'week',l:'주간',ic:'📅'},
+    {id:'write',l:'글쓰기',ic:'✍️'},
     {id:'cafe',l:'침투마케팅',ic:'🎭'},
     {id:'memo',l:'메모',ic:'📝'},
     {id:'record',l:'성과',ic:'📊'},
@@ -809,11 +812,18 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
       {/* ── CONTENT ── */}
       {tab==='today'&&<TodayView dk={dk} tasks={dTasks} carry={carry} updateTask={updateTask} deleteTask={deleteTask} addTask={addTask} copy={copy} copyId={copyId} curUser={curUser} dPct={dPct} isToday={getDK(sel.date)===todayDK}/>}
       {tab==='week'&&<WeekView allDays={allDays} setSelIdx={setSelIdx} setTab={setTab} todayDK={todayDK}/>}
+      {tab==='write'&&<WriteView personas={personas} keywords={keywords} copy={copy} copyId={copyId}/>}
       {tab==='cafe'&&<CafeView copy={copy} copyId={copyId} posts={posts} setPosts={setPosts} personas={personas}/>}
       {tab==='memo'&&<MemoView memos={memos} setMemos={setMemos} curUser={curUser}/>}
       {tab==='record'&&<RecordView records={records} setRecords={setRecords} exportReport={exportReport} tasks={tasks} posts={posts}/>}
       {tab==='risk'&&<RiskView/>}
       {tab==='settings'&&<SettingsView keywords={keywords} setKeywords={setKeywords} personas={personas} setPersonas={setPersonas} doExport={doExport} doImport={doImport} fileRef={fileRef} ghToken={ghToken} setGhToken={setGhToken} syncMsg={syncMsg} setSyncMsg={setSyncMsg} cloudPush={cloudPush}/>}
+
+      {/* ── 돌발업무 플로팅 버튼 ── */}
+      <button onClick={()=>setShowEmergency(true)} style={{position:'fixed',bottom:80,right:16,width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,#dc2626,#ef4444)',color:'#fff',border:'none',fontSize:24,fontWeight:900,cursor:'pointer',boxShadow:'0 4px 20px rgba(220,38,38,.4)',zIndex:90,display:'flex',alignItems:'center',justifyContent:'center',transition:'transform .2s'}} onMouseOver={e=>e.currentTarget.style.transform='scale(1.1)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'} title="돌발업무 추가">🚨</button>
+
+      {/* ── 돌발업무 모달 ── */}
+      {showEmergency&&<EmergencyModal onClose={()=>setShowEmergency(false)} addTask={addTask} dk={dk} curUser={curUser}/>}
     </div>
   );
 }
@@ -835,9 +845,23 @@ function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,copy,copyId,cur
     </div>
     {!isToday&&<div className="card" style={{padding:10,background:'var(--warn-l)',textAlign:'center'}}><p style={{fontSize:12,fontWeight:600,color:'var(--warn)'}}>📅 조회 모드 — 오늘이 아닙니다</p></div>}
     {dPct===100&&tasks.length>0&&<div className="card" style={{padding:20,background:'linear-gradient(135deg,#ecfdf5,#d1fae5)',textAlign:'center',border:'1px solid #bbf7d0'}}><p style={{fontSize:28}}>🎉</p><p style={{fontSize:16,fontWeight:700,color:'var(--success)',marginTop:4}}>오늘 업무 완료!</p><p style={{fontSize:12,color:'#047857',marginTop:2}}>{tasks.length}개 업무 모두 처리됨</p></div>}
-    {carry.length>0&&<div className="card" style={{padding:12}}>
-      <p style={{fontSize:12,fontWeight:700,color:'var(--danger)',marginBottom:6}}>🔄 이월 {carry.length}건</p>
-      {carry.map((t,i)=><div key={i} style={{background:'var(--danger-l)',borderRadius:8,padding:'6px 10px',marginBottom:3}}><p style={{fontSize:12,fontWeight:600,color:'var(--danger)'}}>{t.title}</p><p style={{fontSize:10,color:'var(--text3)'}}>{t.from} · {t.min}분</p></div>)}
+    {carry.length>0&&<div className="card" style={{padding:0,overflow:'hidden',border:'2px solid #fecaca'}}>
+      <div style={{background:'linear-gradient(135deg,#dc2626,#ef4444)',padding:'12px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <p style={{fontSize:14,fontWeight:800,color:'#fff'}}>🔄 이월된 업무 {carry.length}건</p>
+          <p style={{fontSize:11,color:'rgba(255,255,255,.8)'}}>이전 날짜에서 미완료된 업무가 자동 이월됐습니다</p>
+        </div>
+        <span style={{background:'rgba(255,255,255,.2)',color:'#fff',padding:'4px 12px',borderRadius:8,fontSize:18,fontWeight:900}}>{carry.length}</span>
+      </div>
+      <div style={{padding:12}}>
+        {carry.map((t,i)=><div key={i} style={{background:'#fef2f2',borderRadius:10,padding:'10px 14px',marginBottom:6,display:'flex',justifyContent:'space-between',alignItems:'center',border:'1px solid #fecaca'}}>
+          <div>
+            <p style={{fontSize:13,fontWeight:700,color:'#991b1b'}}>{t.title}</p>
+            <p style={{fontSize:11,color:'#dc2626'}}>{t.from}에서 이월 · {t.min}분 · {t.p}</p>
+          </div>
+          <span className="tag" style={{background:'#dc262615',color:'#dc2626',fontSize:10}}>{t.p}</span>
+        </div>)}
+      </div>
     </div>}
 
     {/* ── 오늘의 콘텐츠 브리프 (블로그 태스크에서 meta 추출) ── */}
@@ -1409,6 +1433,214 @@ function RiskView(){
       </div>
     </div>)}
   </div>);
+}
+
+/* ═══ WRITE VIEW (글쓰기 탭) ═══ */
+function WriteView({personas,keywords,copy,copyId}){
+  const[wType,setWType]=useState('blog'); // blog or cafe
+  const[selPersona,setSelPersona]=useState(0);
+  const[kwInput,setKwInput]=useState('');
+  const[selKw,setSelKw]=useState('');
+  const[cafeType,setCafeType]=useState(0); // 0=상담후기, 1=해결후기, 2=정보공유
+  const[generated,setGenerated]=useState(null);
+  const[genPrompt,setGenPrompt]=useState('');
+
+  const pp=personas[selPersona]||personas[0];
+  const pn=(pp.name.split(':')[1]||pp.name).trim();
+
+  const generateBlog=()=>{
+    const kw=kwInput.trim()||selKw||keywords[0];
+    if(!kw)return;
+    const bg=genBlogGuide(kw,1);
+    const draft=`${bg.intro}\n\n${bg.tocDetail.map(t=>`## ${t.h}\n${t.d}\n`).join('\n')}\n\n---\n⚠️ 주의사항:\n${bg.cautions.map(c=>'• '+c).join('\n')}\n\n🏷 태그: ${bg.tags.join(' ')}\n🔑 SEO: ${bg.ltKws.join(' | ')}`;
+    const prompt=`다음 주제로 네이버 블로그 글을 작성해줘: "${kw}"\n\n[글 구조]\n부제: ${bg.subtitle}\n타겟: ${bg.target}\n앵글: ${bg.angle}\n\n[목차 + 각 섹션 작성 지침]\n${bg.tocDetail.map(t=>`${t.h}\n→ ${t.d}`).join('\n\n')}\n\n[작성 규칙]\n- 분량: 1500~2000자\n- 어투: ~습니다/~입니다 (전문적이지만 쉽게)\n- 핵심 정보는 굵게 처리\n- 서론은 공감형으로 시작\n- 마무리: ${bg.cta}\n- 법무법인 리셋회생 자연스럽게 1~2회 언급\n\n[주의사항]\n${bg.cautions.map(c=>'- '+c).join('\n')}\n\n[SEO]\n롱테일 키워드: ${bg.ltKws.join(', ')}\n해시태그: ${bg.tags.join(' ')}`;
+    setGenerated({type:'blog',kw,bg,draft});
+    setGenPrompt(prompt);
+  };
+
+  const generateCafe=()=>{
+    const ci=cafeType;
+    const prompt=CAFE_PROMPTS[ci].getPrompt(pp);
+    const structure=ci===0?'① 내 채무 상황 고백 → ② 상담 계기 → ③ 상담 과정 (대화체) → ④ 느낀점 → ⑤ 자연 CTA':ci===1?'① 과거 고통 → ② 신청~인가 과정 → ③ 전후 금액 비교 → ④ 지금 생활 → ⑤ 응원':'① 핵심 팁 나열 → ② 각각 내 경험 → ③ 비교 → ④ 주의점 → ⑤ 마무리';
+    const draft=`[${['상담후기','해결후기','정보공유'][ci]}형 카페글 — ${pn}(${pp.age})]\n\n📝 말투: ${pp.tone}\n🎭 스타일: ${pp.style}\n✍️ 맞춤법 패턴: ${pp.typos||'자연스럽게 틀리기'}\n👤 나이대 문체: ${pp.ageStyle||''}\n\n📋 글 구조:\n${structure}\n\n📌 배경 스토리:\n${pp.background}\n\n⚠️ 주의사항:\n• 법무법인명 1번만 (지인소개/검색)\n• 전화번호/링크/"광고아님" 절대 금지\n• 맞춤법 2~3곳 일부러 틀리기\n• 300~500자 분량`;
+    setGenerated({type:'cafe',persona:pp,cafeType:ci,draft});
+    setGenPrompt(prompt);
+  };
+
+  return(<div>
+    <div className="section-header" style={{background:'linear-gradient(135deg,#7c3aed,#a78bfa)'}}>
+      <h2>✍️ 글쓰기</h2>
+      <p>블로그/카페 콘텐츠 자동 생성 · 페르소나별 톤앤매너 유지</p>
+    </div>
+
+    {/* 글 종류 선택 */}
+    <div style={{display:'flex',gap:8,marginBottom:12}}>
+      {[{id:'blog',l:'📝 블로그 글',d:'SEO 최적화 법률 블로그'},{id:'cafe',l:'🎭 카페 침투글',d:'페르소나별 후기/정보글'}].map(t=>
+        <div key={t.id} onClick={()=>{setWType(t.id);setGenerated(null)}} className="card" style={{flex:1,padding:16,cursor:'pointer',textAlign:'center',border:wType===t.id?'2px solid var(--primary)':'2px solid transparent',background:wType===t.id?'var(--primary-xl)':'#fff'}}>
+          <p style={{fontSize:20,marginBottom:4}}>{t.l.split(' ')[0]}</p>
+          <p style={{fontSize:14,fontWeight:700,color:wType===t.id?'var(--primary)':'var(--text)'}}>{t.l.split(' ').slice(1).join(' ')}</p>
+          <p style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{t.d}</p>
+        </div>
+      )}
+    </div>
+
+    {/* 블로그 설정 */}
+    {wType==='blog'&&<div className="card" style={{padding:16}}>
+      <p style={{fontSize:15,fontWeight:800,marginBottom:12}}>📝 블로그 글 생성</p>
+      <div style={{marginBottom:12}}>
+        <label style={{fontSize:12,fontWeight:700,color:'var(--primary)',display:'block',marginBottom:6}}>키워드 직접 입력</label>
+        <input value={kwInput} onChange={e=>setKwInput(e.target.value)} placeholder="예: 개인회생 신청자격 조건 2026" className="input" onKeyDown={e=>e.key==='Enter'&&generateBlog()}/>
+      </div>
+      <div style={{marginBottom:12}}>
+        <label style={{fontSize:12,fontWeight:700,color:'var(--text2)',display:'block',marginBottom:6}}>또는 키워드 풀에서 선택</label>
+        <div style={{display:'flex',flexWrap:'wrap',gap:4,maxHeight:120,overflowY:'auto',padding:4,background:'#f8f9fc',borderRadius:10}}>
+          {keywords.slice(0,20).map((kw,i)=><button key={i} onClick={()=>{setSelKw(kw);setKwInput(kw)}} style={{padding:'5px 10px',borderRadius:8,border:selKw===kw?'1.5px solid var(--primary)':'1px solid var(--border)',background:selKw===kw?'var(--primary-l)':'#fff',fontSize:11,fontWeight:selKw===kw?700:500,color:selKw===kw?'var(--primary)':'var(--text2)',cursor:'pointer'}}>{kw.length>20?kw.slice(0,20)+'…':kw}</button>)}
+        </div>
+      </div>
+      <button onClick={generateBlog} className="btn btn-primary" style={{width:'100%',padding:14,fontSize:15}} disabled={!kwInput.trim()&&!selKw}>✨ 블로그 콘텐츠 가이드 생성</button>
+    </div>}
+
+    {/* 카페 설정 */}
+    {wType==='cafe'&&<div className="card" style={{padding:16}}>
+      <p style={{fontSize:15,fontWeight:800,marginBottom:12}}>🎭 카페 침투글 생성</p>
+      <div style={{marginBottom:12}}>
+        <label style={{fontSize:12,fontWeight:700,color:'var(--primary)',display:'block',marginBottom:6}}>페르소나 선택</label>
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+          {personas.map((p,i)=><div key={i} onClick={()=>setSelPersona(i)} style={{display:'flex',alignItems:'center',gap:10,padding:12,borderRadius:12,border:selPersona===i?`2px solid ${p.color}`:'1.5px solid var(--border)',background:selPersona===i?p.color+'08':'#fff',cursor:'pointer',transition:'all .15s'}}>
+            <span style={{fontSize:28}}>{p.emoji}</span>
+            <div style={{flex:1}}>
+              <p style={{fontSize:13,fontWeight:700,color:selPersona===i?p.color:'var(--text)'}}>{p.name}</p>
+              <p style={{fontSize:11,color:'var(--text2)'}}>{p.age} · {p.job}</p>
+              <p style={{fontSize:10,color:'var(--text3)',marginTop:2}}>{p.tone.slice(0,40)}...</p>
+            </div>
+            {selPersona===i&&<span style={{width:24,height:24,borderRadius:'50%',background:p.color,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:900}}>✓</span>}
+          </div>)}
+        </div>
+      </div>
+      <div style={{marginBottom:12}}>
+        <label style={{fontSize:12,fontWeight:700,color:'var(--primary)',display:'block',marginBottom:6}}>글 유형</label>
+        <div style={{display:'flex',gap:6}}>
+          {['상담 후기형','해결 후기형','정보 공유형'].map((t,i)=><button key={i} onClick={()=>setCafeType(i)} style={{flex:1,padding:'10px 8px',borderRadius:10,border:cafeType===i?'2px solid var(--primary)':'1.5px solid var(--border)',background:cafeType===i?'var(--primary-l)':'#fff',fontSize:12,fontWeight:cafeType===i?700:500,color:cafeType===i?'var(--primary)':'var(--text2)',cursor:'pointer'}}>{['💬','🎉','📋'][i]} {t}</button>)}
+        </div>
+      </div>
+      <button onClick={generateCafe} className="btn btn-primary" style={{width:'100%',padding:14,fontSize:15}}>✨ 카페글 가이드 + 프롬프트 생성</button>
+    </div>}
+
+    {/* 생성 결과 */}
+    {generated&&<div style={{marginTop:8}}>
+      {/* 콘텐츠 가이드 */}
+      <div className="card" style={{padding:0,overflow:'hidden'}}>
+        <div style={{background:generated.type==='blog'?'linear-gradient(135deg,#6c5ce7,#a29bfe)':'linear-gradient(135deg,#ec4899,#f472b6)',padding:'14px 18px'}}>
+          <p style={{fontSize:16,fontWeight:800,color:'#fff'}}>{generated.type==='blog'?'📝 블로그 콘텐츠 가이드':'🎭 카페글 가이드'}</p>
+          <p style={{fontSize:12,color:'rgba(255,255,255,.8)',marginTop:2}}>{generated.type==='blog'?generated.kw:`${pn}(${pp.age}) · ${['상담후기','해결후기','정보공유'][generated.cafeType]}`}</p>
+        </div>
+        <div style={{padding:16}}>
+          <pre style={{fontSize:13,lineHeight:1.8,whiteSpace:'pre-wrap',color:'var(--text)',fontFamily:'inherit'}}>{generated.draft}</pre>
+        </div>
+        <div style={{padding:'0 16px 16px',display:'flex',gap:8}}>
+          <button onClick={()=>copy(generated.draft,'draft')} className="btn btn-ghost" style={{flex:1}}>{copyId==='draft'?'✅ 복사됨':'📋 가이드 복사'}</button>
+        </div>
+      </div>
+
+      {/* Claude 프롬프트 */}
+      <div className="card" style={{padding:0,overflow:'hidden'}}>
+        <div style={{background:'linear-gradient(135deg,#312e81,#4338ca)',padding:'14px 18px'}}>
+          <p style={{fontSize:16,fontWeight:800,color:'#fff'}}>🤖 Claude 프롬프트</p>
+          <p style={{fontSize:12,color:'rgba(255,255,255,.8)',marginTop:2}}>아래 프롬프트를 Claude에 붙여넣으면 글이 자동 생성됩니다</p>
+        </div>
+        <div style={{padding:16}}>
+          <pre style={{fontSize:12,lineHeight:1.7,whiteSpace:'pre-wrap',color:'var(--primary-d)',background:'var(--primary-xl)',borderRadius:10,padding:14,fontFamily:'inherit',border:'1px solid var(--primary-l)',maxHeight:300,overflowY:'auto'}}>{genPrompt}</pre>
+        </div>
+        <div style={{padding:'0 16px 16px',display:'flex',gap:8}}>
+          <button onClick={()=>copy(genPrompt,'prompt')} className="btn btn-primary" style={{flex:1}}>{copyId==='prompt'?'✅ 복사됨':'📋 프롬프트 복사'}</button>
+        </div>
+      </div>
+
+      {/* 블로그일 때 추가 정보 */}
+      {generated.type==='blog'&&generated.bg&&<div className="card" style={{padding:16}}>
+        <p style={{fontSize:14,fontWeight:800,marginBottom:10}}>📊 SEO 정보</p>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>
+          {generated.bg.tags.map((tag,j)=><span key={j} style={{background:'#f0edff',color:'#7c3aed',padding:'4px 10px',borderRadius:6,fontSize:11,fontWeight:600}}>{tag}</span>)}
+        </div>
+        <p style={{fontSize:12,color:'var(--text2)',lineHeight:1.6}}>🔑 롱테일: {generated.bg.ltKws.join(' | ')}</p>
+      </div>}
+    </div>}
+  </div>);
+}
+
+/* ═══ EMERGENCY MODAL (돌발업무) ═══ */
+function EmergencyModal({onClose,addTask,dk,curUser}){
+  const[cat,setCat]=useState('lawyer');
+  const[title,setTitle]=useState('');
+  const[detail,setDetail]=useState('');
+  const[priority,setPriority]=useState('P0');
+
+  const CATS=[
+    {id:'lawyer',l:'⚖️ 변호사님 긴급 지시',c:'#dc2626',ph:'홈페이지 수정, 콘텐츠 작성 등'},
+    {id:'cafe',l:'🚫 카페글 삭제/경고',c:'#f59e0b',ph:'어느 카페, 어떤 글, 경고 내용'},
+    {id:'tech',l:'💻 홈페이지/시스템 에러',c:'#3b82f6',ph:'어떤 페이지, 어떤 오류'},
+    {id:'client',l:'👤 고객 관련 긴급건',c:'#8b5cf6',ph:'고객 문의 내용, 마감 시한'},
+    {id:'improve',l:'🔧 홈페이지 개선 지시',c:'#059669',ph:'어떤 페이지, 무엇을 개선'}
+  ];
+  const selCat=CATS.find(c=>c.id===cat);
+
+  const handleAdd=()=>{
+    if(!title.trim())return;
+    addTask(dk,{
+      id:dk+'-em'+Date.now(),
+      type:cat==='tech'||cat==='improve'?'dev':cat==='cafe'?'cafe':'check',
+      p:priority,
+      title:`🚨 ${title}`,
+      who:curUser,
+      min:30,
+      guide:[{step:'돌발업무',detail:detail||'상세 내용 없음'}],
+      prompt:'',
+      done:false,
+      emergency:true,
+      emergencyCat:cat,
+      createdAt:new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})
+    });
+    onClose();
+  };
+
+  return <div className="modal-overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:480}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+      <div>
+        <p style={{fontSize:18,fontWeight:900,color:'var(--danger)'}}>🚨 돌발업무 추가</p>
+        <p style={{fontSize:12,color:'var(--text2)'}}>긴급 변동사항·에러·지시사항을 빠르게 등록</p>
+      </div>
+      <button onClick={onClose} style={{width:32,height:32,borderRadius:10,border:'1px solid var(--border)',background:'#fff',fontSize:16,cursor:'pointer'}}>✕</button>
+    </div>
+
+    <div style={{marginBottom:14}}>
+      <label style={{fontSize:12,fontWeight:700,color:'var(--text)',display:'block',marginBottom:6}}>카테고리</label>
+      <div style={{display:'flex',flexDirection:'column',gap:4}}>
+        {CATS.map(c=><button key={c.id} onClick={()=>setCat(c.id)} style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',borderRadius:10,border:cat===c.id?`2px solid ${c.c}`:'1.5px solid var(--border)',background:cat===c.id?c.c+'0a':'#fff',cursor:'pointer',textAlign:'left'}}>
+          <span style={{fontSize:16}}>{c.l.split(' ')[0]}</span>
+          <span style={{fontSize:13,fontWeight:cat===c.id?700:500,color:cat===c.id?c.c:'var(--text)'}}>{c.l.split(' ').slice(1).join(' ')}</span>
+        </button>)}
+      </div>
+    </div>
+
+    <div style={{marginBottom:10}}>
+      <label style={{fontSize:12,fontWeight:700,display:'block',marginBottom:4}}>제목 *</label>
+      <input value={title} onChange={e=>setTitle(e.target.value)} placeholder={selCat.ph} className="input" autoFocus/>
+    </div>
+
+    <div style={{marginBottom:10}}>
+      <label style={{fontSize:12,fontWeight:700,display:'block',marginBottom:4}}>상세 내용</label>
+      <textarea value={detail} onChange={e=>setDetail(e.target.value)} placeholder="구체적 내용, 마감 시한, 참고사항 등" className="input" style={{minHeight:70,resize:'vertical'}}/>
+    </div>
+
+    <div style={{marginBottom:16}}>
+      <label style={{fontSize:12,fontWeight:700,display:'block',marginBottom:4}}>우선순위</label>
+      <div style={{display:'flex',gap:6}}>
+        {['P0','P1','P2'].map(p=><button key={p} onClick={()=>setPriority(p)} style={{flex:1,padding:'8px',borderRadius:8,border:priority===p?'2px solid var(--danger)':'1.5px solid var(--border)',background:priority===p?'var(--danger-l)':'#fff',fontSize:13,fontWeight:priority===p?700:500,color:priority===p?'var(--danger)':'var(--text2)',cursor:'pointer'}}>{p} {p==='P0'?'(즉시)':p==='P1'?'(오늘 중)':'(여유)'}</button>)}
+      </div>
+    </div>
+
+    <button onClick={handleAdd} className="btn" style={{width:'100%',padding:14,fontSize:15,fontWeight:800,background:`linear-gradient(135deg,${selCat.c},${selCat.c}cc)`,color:'#fff',border:'none'}} disabled={!title.trim()}>🚨 등록하기</button>
+  </div></div>;
 }
 
 /* ═══ SETTINGS ═══ */
