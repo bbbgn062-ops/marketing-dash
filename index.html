@@ -606,6 +606,43 @@ function App(){
   const addTask=(dk,task)=>setTasks(p=>({...p,[dk]:[...(p[dk]||[]),task]}));
   const copy=(txt,id)=>{navigator.clipboard?.writeText(txt);setCopyId(id);setTimeout(()=>setCopyId(''),1500)};
 
+  // ── 더블클릭 이월: 다음 영업일로 이동 + 이후 일정 재조정 ──
+  const deferTask=(fromDK,taskId)=>{
+    setTasks(prev=>{
+      const fromTasks=prev[fromDK]||[];
+      const task=fromTasks.find(t=>t.id===taskId);
+      if(!task)return prev;
+
+      // 다음 영업일 계산
+      const fromDate=new Date(fromDK+'T00:00:00');
+      const nextBiz=new Date(fromDate);
+      do{nextBiz.setDate(nextBiz.getDate()+1)}while(nextBiz.getDay()===0||nextBiz.getDay()===6);
+      const nextDK=getDK(nextBiz);
+
+      // fromDK에서 제거
+      const newFrom=fromTasks.filter(t=>t.id!==taskId);
+      // nextDK에 추가 (deferred 표시)
+      const deferredTask={...task,id:nextDK+'-def'+Date.now(),done:false,deferred:true,deferredFrom:fromDK};
+      const nextTasks=[...(prev[nextDK]||[]),deferredTask];
+
+      // 이후 일정 재조정: nextDK 이후 영업일의 같은 타입 업무 중 P1 하나를 그 다음날로 밀기
+      let updated={...prev,[fromDK]:newFrom,[nextDK]:nextTasks};
+      // nextDK에 같은 타입 P1 태스크가 이미 있으면 → 하나를 그 다음 영업일로 밀기
+      const sameTypeP1=nextTasks.filter(t=>t.type===task.type&&t.p==='P1'&&t.id!==deferredTask.id&&!t.done);
+      if(sameTypeP1.length>0){
+        const bump=sameTypeP1[sameTypeP1.length-1]; // 마지막 P1 하나를 밀기
+        const afterBiz=new Date(nextBiz);
+        do{afterBiz.setDate(afterBiz.getDate()+1)}while(afterBiz.getDay()===0||afterBiz.getDay()===6);
+        const afterDK=getDK(afterBiz);
+        updated[nextDK]=updated[nextDK].filter(t=>t.id!==bump.id);
+        const bumpedTask={...bump,id:afterDK+'-bump'+Date.now(),deferred:true,deferredFrom:nextDK};
+        updated[afterDK]=[...(updated[afterDK]||[]),bumpedTask];
+      }
+      return updated;
+    });
+    setSaved(true);setTimeout(()=>setSaved(false),1500);
+  };
+
   // Carry-over: P0 + P1 미완료 → 오늘로 자동 이월 + 알림
   const carry=useMemo(()=>{
     if(!isThisWeek)return[];const c=[];const ti=now.getDay()-1;
@@ -810,7 +847,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
       </div>
 
       {/* ── CONTENT ── */}
-      {tab==='today'&&<TodayView dk={dk} tasks={dTasks} carry={carry} updateTask={updateTask} deleteTask={deleteTask} addTask={addTask} copy={copy} copyId={copyId} curUser={curUser} dPct={dPct} isToday={getDK(sel.date)===todayDK}/>}
+      {tab==='today'&&<TodayView dk={dk} tasks={dTasks} carry={carry} updateTask={updateTask} deleteTask={deleteTask} addTask={addTask} deferTask={deferTask} copy={copy} copyId={copyId} curUser={curUser} dPct={dPct} isToday={getDK(sel.date)===todayDK}/>}
       {tab==='week'&&<WeekView allDays={allDays} setSelIdx={setSelIdx} setTab={setTab} todayDK={todayDK}/>}
       {tab==='write'&&<WriteView personas={personas} keywords={keywords} copy={copy} copyId={copyId}/>}
       {tab==='cafe'&&<CafeView copy={copy} copyId={copyId} posts={posts} setPosts={setPosts} personas={personas}/>}
@@ -829,7 +866,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
 }
 
 /* ═══ TODAY VIEW ═══ */
-function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,copy,copyId,curUser,dPct,isToday}){
+function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,deferTask,copy,copyId,curUser,dPct,isToday}){
   const[addMode,setAddMode]=useState(false);
   const[newTitle,setNewTitle]=useState('');
   const[newMin,setNewMin]=useState('30');
@@ -936,8 +973,8 @@ function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,copy,copyId,cur
       <div style={{display:'flex',gap:6}}><input value={newMin} onChange={e=>setNewMin(e.target.value)} placeholder="분" className="input" style={{width:70}}/><button onClick={handleAdd} className="btn btn-primary" style={{flex:1}}>추가</button><button onClick={()=>setAddMode(false)} className="btn btn-ghost">취소</button></div>
     </div>}
 
-    {my.map(t=><TaskCard key={t.id} task={t} dk={dk} updateTask={updateTask} deleteTask={deleteTask} copy={copy} copyId={copyId}/>)}
-    {other.length>0&&<><p style={{fontSize:14,fontWeight:800,margin:'18px 0 8px',padding:'0 4px'}}>👥 다른 팀원</p>{other.map(t=><TaskCard key={t.id} task={t} dk={dk} updateTask={updateTask} deleteTask={deleteTask} copy={copy} copyId={copyId}/>)}</>}
+    {my.map(t=><TaskCard key={t.id} task={t} dk={dk} updateTask={updateTask} deleteTask={deleteTask} deferTask={deferTask} copy={copy} copyId={copyId}/>)}
+    {other.length>0&&<><p style={{fontSize:14,fontWeight:800,margin:'18px 0 8px',padding:'0 4px'}}>👥 다른 팀원</p>{other.map(t=><TaskCard key={t.id} task={t} dk={dk} updateTask={updateTask} deleteTask={deleteTask} deferTask={deferTask} copy={copy} copyId={copyId}/>)}</>}
 
     <div className="card" style={{padding:14,marginTop:6,background:'linear-gradient(135deg,#f8f7ff 0%,#f0edff 100%)',border:'1px solid var(--primary-l)'}}>
       <p style={{fontSize:13,fontWeight:700,color:'var(--primary)',marginBottom:10}}>⏰ 일일 타임라인</p>
@@ -965,21 +1002,43 @@ function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,copy,copyId,cur
 }
 
 /* ═══ TASK CARD ═══ */
-function TaskCard({task,dk,updateTask,deleteTask,copy,copyId}){
+function TaskCard({task,dk,updateTask,deleteTask,deferTask,copy,copyId}){
   const[exp,setExp]=useState(false);
   const[editing,setEditing]=useState(false);
   const[et,setEt]=useState(task.title);
+  const[showDefer,setShowDefer]=useState(false);
   const d=task.done;
+  const clickTimer=useRef(null);
   const tm={blog:{l:'블로그',c:'#6c5ce7',bg:'#f4f2ff'},cafe:{l:'카페',c:'#a29bfe',bg:'#f0eeff'},seo:{l:'SEO',c:'#e17055',bg:'#ffeaa7'},meet:{l:'미팅',c:'#00b894',bg:'#e6fcf5'},dev:{l:'개발',c:'#fd79a8',bg:'#fff0f6'},check:{l:'검수',c:'#636e72',bg:'#f5f6fa'}};
   const ti=tm[task.type]||tm.check;const u=USERS.find(u=>u.id===task.who)||{name:'전원',em:'👥'};
+
+  // 1클릭=완료 토글, 더블클릭=다음날로 이월
+  const handleCheckClick=()=>{
+    if(clickTimer.current){clearTimeout(clickTimer.current);clickTimer.current=null;
+      // 더블클릭: 이월
+      if(deferTask){deferTask(dk,task.id)}
+      return;
+    }
+    clickTimer.current=setTimeout(()=>{
+      clickTimer.current=null;
+      // 싱글클릭: 완료 토글
+      updateTask(dk,task.id,{done:!d});
+    },250);
+  };
+
   return(
-    <div className="card" style={{opacity:d?.5:1,animation:'cardIn .2s ease'}}>
+    <div className="card" style={{opacity:d?.5:1,animation:'cardIn .2s ease',borderLeft:task.deferred?'3px solid var(--warn)':task.emergency?'3px solid var(--danger)':'none'}}>
       <div style={{padding:'12px 14px',display:'flex',gap:10,alignItems:'flex-start'}}>
-        <button onClick={()=>updateTask(dk,task.id,{done:!d})} style={{width:22,height:22,borderRadius:7,border:`2px solid ${d?'var(--success)':'var(--text4)'}`,background:d?'var(--success)':'#fff',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:11,fontWeight:700,flexShrink:0,cursor:'pointer',transition:'all .15s',marginTop:2}}>{d?'✓':''}</button>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+          <button onClick={handleCheckClick} title="1클릭=완료 · 더블클릭=내일로" style={{width:26,height:26,borderRadius:8,border:`2px solid ${d?'var(--success)':'var(--text4)'}`,background:d?'var(--success)':'#fff',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:12,fontWeight:700,flexShrink:0,cursor:'pointer',transition:'all .15s',marginTop:2}}>{d?'✓':''}</button>
+          <span style={{fontSize:8,color:'var(--text4)',fontWeight:600,letterSpacing:'-0.02em'}}>2x→내일</span>
+        </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:'flex',gap:4,alignItems:'center',marginBottom:3}}>
             <span style={{width:6,height:6,borderRadius:3,background:task.p==='P0'?'var(--danger)':'var(--warn)',flexShrink:0}}/>
             <span className="tag" style={{background:ti.bg,color:ti.c,fontSize:10}}>{ti.l}</span>
+            {task.deferred&&<span className="tag" style={{background:'#fef3c7',color:'#92400e',fontSize:9}}>📌 이월</span>}
+            {task.emergency&&<span className="tag" style={{background:'#fef2f2',color:'#dc2626',fontSize:9}}>🚨 긴급</span>}
             <span style={{fontSize:10,color:'var(--text3)'}}>{u.em} {u.name} · {task.min}분</span>
           </div>
           {editing?<div style={{display:'flex',gap:4}}><input value={et} onChange={e=>setEt(e.target.value)} className="input" style={{padding:'6px 10px',fontSize:13}} onKeyDown={e=>e.key==='Enter'&&(updateTask(dk,task.id,{title:et}),setEditing(false))}/><button onClick={()=>{updateTask(dk,task.id,{title:et});setEditing(false)}} className="btn btn-primary" style={{padding:'6px 12px',fontSize:11}}>저장</button></div>
@@ -987,6 +1046,7 @@ function TaskCard({task,dk,updateTask,deleteTask,copy,copyId}){
           <div style={{display:'flex',gap:3,marginTop:5,flexWrap:'wrap'}}>
             <button onClick={()=>setExp(!exp)} style={{padding:'3px 8px',borderRadius:6,border:'none',background:'var(--bg2)',color:'var(--text2)',fontSize:11,fontWeight:500,cursor:'pointer',transition:'background .1s'}}>{exp?'접기 ▲':'가이드 ▼'}</button>
             {task.prompt&&<button onClick={()=>copy(task.prompt,task.id)} style={{padding:'3px 8px',borderRadius:6,border:'none',background:'var(--primary-l)',color:'var(--primary)',fontSize:11,fontWeight:600,cursor:'pointer'}}>{copyId===task.id?'✅':'📋 프롬프트'}</button>}
+            {deferTask&&!d&&<button onClick={()=>deferTask(dk,task.id)} title="내일로 이월 (일정 자동 조정)" style={{padding:'3px 8px',borderRadius:6,border:'none',background:'#fef3c7',color:'#92400e',fontSize:11,fontWeight:600,cursor:'pointer'}}>📌 내일로</button>}
             <button onClick={()=>{setEditing(true);setEt(task.title)}} style={{padding:'3px 6px',borderRadius:6,border:'none',background:'var(--bg2)',color:'var(--text3)',fontSize:11,cursor:'pointer'}}>✏️</button>
             <button onClick={()=>confirm('삭제?')&&deleteTask(dk,task.id)} style={{padding:'3px 6px',borderRadius:6,border:'none',background:'var(--danger-l)',color:'var(--danger)',fontSize:11,cursor:'pointer'}}>🗑</button>
           </div>
