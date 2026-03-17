@@ -847,8 +847,8 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
       </div>
 
       {/* ── CONTENT ── */}
-      {tab==='today'&&<TodayView dk={dk} tasks={dTasks} carry={carry} updateTask={updateTask} deleteTask={deleteTask} addTask={addTask} deferTask={deferTask} copy={copy} copyId={copyId} curUser={curUser} dPct={dPct} isToday={getDK(sel.date)===todayDK}/>}
-      {tab==='week'&&<WeekView allDays={allDays} setSelIdx={setSelIdx} setTab={setTab} todayDK={todayDK}/>}
+      {tab==='today'&&<TodayView dk={dk} tasks={dTasks} carry={carry} updateTask={updateTask} deleteTask={deleteTask} addTask={addTask} deferTask={deferTask} copy={copy} copyId={copyId} curUser={curUser} dPct={dPct} isToday={getDK(sel.date)===todayDK} onEmergency={()=>setShowEmergency(true)}/>}
+      {tab==='week'&&<WeekView allDays={allDays} setSelIdx={setSelIdx} setTab={setTab} todayDK={todayDK} onEmergency={()=>setShowEmergency(true)}/>}
       {tab==='write'&&<WriteView personas={personas} keywords={keywords} copy={copy} copyId={copyId}/>}
       {tab==='cafe'&&<CafeView copy={copy} copyId={copyId} posts={posts} setPosts={setPosts} personas={personas}/>}
       {tab==='memo'&&<MemoView memos={memos} setMemos={setMemos} curUser={curUser}/>}
@@ -866,7 +866,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
 }
 
 /* ═══ TODAY VIEW ═══ */
-function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,deferTask,copy,copyId,curUser,dPct,isToday}){
+function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,deferTask,copy,copyId,curUser,dPct,isToday,onEmergency}){
   const[addMode,setAddMode]=useState(false);
   const[newTitle,setNewTitle]=useState('');
   const[newMin,setNewMin]=useState('30');
@@ -962,7 +962,10 @@ function TodayView({dk,tasks,carry,updateTask,deleteTask,addTask,deferTask,copy,
 
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:'10px 0 8px',padding:'0 2px'}}>
       <p style={{fontSize:14,fontWeight:700}}>{curUser==='hyerim'?'혜림':curUser==='taehyun'?'태현':curUser}의 업무 <span style={{color:'var(--text3)',fontSize:12,fontWeight:500}}>({my.filter(t=>t.done).length}/{my.length})</span></p>
-      <button onClick={()=>setAddMode(!addMode)} style={{padding:'5px 12px',borderRadius:8,border:'1px solid var(--border)',background:'#fff',color:'var(--text2)',fontSize:12,fontWeight:500,cursor:'pointer'}}>＋ 추가</button>
+      <div style={{display:'flex',gap:4}}>
+        <button onClick={onEmergency} style={{padding:'5px 12px',borderRadius:8,border:'1px solid #fecaca',background:'#fef2f2',color:'#dc2626',fontSize:12,fontWeight:600,cursor:'pointer'}}>🚨 돌발</button>
+        <button onClick={()=>setAddMode(!addMode)} style={{padding:'5px 12px',borderRadius:8,border:'1px solid var(--border)',background:'#fff',color:'var(--text2)',fontSize:12,fontWeight:500,cursor:'pointer'}}>＋ 추가</button>
+      </div>
     </div>
 
     {addMode&&<div className="card" style={{padding:14,marginBottom:8}}>
@@ -1075,13 +1078,16 @@ function TaskCard({task,dk,updateTask,deleteTask,deferTask,copy,copyId}){
 }
 
 /* ═══ WEEK VIEW ═══ */
-function WeekView({allDays,setSelIdx,setTab,todayDK}){
+function WeekView({allDays,setSelIdx,setTab,todayDK,onEmergency}){
   const wDone=allDays.flatMap(d=>d.tasks).filter(t=>t.done).length;
   const wTotal=allDays.flatMap(d=>d.tasks).length;
   return(<div>
     <div className="section-header" style={{background:'linear-gradient(135deg,#3b82f6,#6366f1)'}}>
       <h2>📅 주간 현황</h2>
       <p>완료 {wDone}/{wTotal} · 진행률 {wTotal?Math.round(wDone/wTotal*100):0}%</p>
+    </div>
+    <div style={{display:'flex',gap:6,marginBottom:12}}>
+      <button onClick={onEmergency} style={{flex:1,padding:'10px 14px',borderRadius:10,border:'1.5px solid #fecaca',background:'#fef2f2',color:'#dc2626',fontSize:13,fontWeight:700,cursor:'pointer'}}>🚨 돌발업무 추가</button>
     </div>
   {allDays.map((day,i)=>{
     const dn=day.tasks.filter(t=>t.done).length;const p=day.tasks.length?Math.round(dn/day.tasks.length*100):0;const isT=day.dk===todayDK;
