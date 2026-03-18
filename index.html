@@ -463,7 +463,11 @@ function genBlogGuide(kw,num){
   return {subtitle,target,angle,toc,tocDetail,tags:tags.slice(0,7),ltKws,cta,cautions,intro,kwType};
 }
 
-const TASK_VER=3; // bump to force-regenerate
+/* ═══ SCHEDULING CONSTANTS ═══ */
+const MAX_DAY_MIN=300;  // 하루 절대 상한 5시간(300분)
+const BUFFER_MIN=60;    // 돌발업무 버퍼 1시간 (1~2건/일 전제)
+const PLAN_MAX=MAX_DAY_MIN-BUFFER_MIN; // 계획 업무 최대 240분
+const TASK_VER=4; // bump to force-regenerate
 // existingDeferred: 이미 이월된 업무 수를 받아서 자동생성 양 조절
 function genTasks(date,kws,pers,existingDeferred=0){
   const s=date.getDate()+date.getMonth()*31;const dow=date.getDay();const dk=getDK(date);
@@ -521,26 +525,17 @@ function genTasks(date,kws,pers,existingDeferred=0){
       ],
       prompt:CAFE_PROMPTS[ci].getPrompt(pp),done:false},
   ];
-  // 이월 업무가 적을 때만 블로그#3 추가
-  if(!skipB3){t.push(
-    {id:dk+'-b3',type:'blog',p:'P1',title:`블로그 #3 (여유시): ${k3}`,who:'hyerim',min:40,
-      meta:{subtitle:bg3.subtitle,target:bg3.target,angle:bg3.angle,toc:bg3.toc,tocDetail:bg3.tocDetail,tags:bg3.tags,ltKws:bg3.ltKws,cta:bg3.cta,cautions:bg3.cautions,intro:bg3.intro},
-      guide:[
-        {step:'콘텐츠 기획',detail:`📌 부제: ${bg3.subtitle}\n🎯 타겟: ${bg3.target}\n📑 목차:\n${bg3.toc.join('\n')}`},
-        {step:'Claude 프롬프트',detail:`/blog-legal ${k3}`},
-        {step:'빠른 수정 + 발행',detail:`핵심만 수정 → /content-check\n🏷 태그: ${bg3.tags.join(' ')}`}
-      ],
-      prompt:`/blog-legal ${k3}`,done:false});}
-  if(!skipSEO){t.push(
-    {id:dk+'-seo',type:'seo',p:'P1',title:'전일 성과 체크',who:'hyerim',min:15,
-      guide:[{step:'블로그 관리자 → 통계',detail:'조회수 / 유입키워드 / 검색순위 확인'},{step:'성과기록 탭에 수치 입력',detail:'일일 조회수, 유입 키워드, 순위 변동'},{step:'저조한 글 개선 검토',detail:'제목 변경 / 태그 추가 / 본문 보강 / 이미지 교체'}],
-      prompt:'',done:false});}
-  const t2=[
-    {id:dk+'-th1',type:'cafe',p:'P1',title:'[태현] 카페 후기글 보조',who:'taehyun',min:20,
-      guide:[{step:'혜림이 준 프롬프트로 초안 생성',detail:'침투마케팅 탭 → 프롬프트 복사 → Claude 입력'},{step:'혜림에게 검수 받기',detail:'완성 글 공유 → 피드백 반영'},{step:'카페 등록',detail:'지정 카페에 올리기 → URL 혜림에게 보고'}],
-      prompt:'',done:false},
-  ];
-  t.push(...t2);
+  // ── P1 업무: 이월 업무량에 따라 조건부 추가 ──
+  if(!skipB3) t.push({id:dk+'-b3',type:'blog',p:'P1',title:`블로그 #3 (여유시): ${k3}`,who:'hyerim',min:40,
+    meta:{subtitle:bg3.subtitle,target:bg3.target,angle:bg3.angle,toc:bg3.toc,tocDetail:bg3.tocDetail,tags:bg3.tags,ltKws:bg3.ltKws,cta:bg3.cta,cautions:bg3.cautions,intro:bg3.intro},
+    guide:[{step:'콘텐츠 기획',detail:`📌 부제: ${bg3.subtitle}\n🎯 타겟: ${bg3.target}\n📑 목차:\n${bg3.toc.join('\n')}`},{step:'Claude 프롬프트',detail:`/blog-legal ${k3}`},{step:'빠른 수정 + 발행',detail:`핵심만 수정 → /content-check\n🏷 태그: ${bg3.tags.join(' ')}`}],
+    prompt:`/blog-legal ${k3}`,done:false});
+  if(!skipSEO) t.push({id:dk+'-seo',type:'seo',p:'P1',title:'전일 성과 체크',who:'hyerim',min:15,
+    guide:[{step:'블로그 관리자 → 통계',detail:'조회수 / 유입키워드 / 검색순위 확인'},{step:'성과기록 탭에 수치 입력',detail:'일일 조회수, 유입 키워드, 순위 변동'},{step:'저조한 글 개선 검토',detail:'제목 변경 / 태그 추가 / 본문 보강 / 이미지 교체'}],
+    prompt:'',done:false});
+  t.push({id:dk+'-th1',type:'cafe',p:'P1',title:'[태현] 카페 후기글 보조',who:'taehyun',min:20,
+    guide:[{step:'혜림이 준 프롬프트로 초안 생성',detail:'침투마케팅 탭 → 프롬프트 복사 → Claude 입력'},{step:'혜림에게 검수 받기',detail:'완성 글 공유 → 피드백 반영'},{step:'카페 등록',detail:'지정 카페에 올리기 → URL 혜림에게 보고'}],
+    prompt:'',done:false});
 
   if(dow===1)t.push({id:dk+'-kick',type:'meet',p:'P0',title:'주간 킥오프',who:'all',min:15,guide:[{step:'이번 주 키워드 확인',detail:'대시보드 자동 배정 키워드 리뷰'},{step:'지난주 이월건 재배치',detail:'미완료 P0 업무 확인'},{step:'태현 서류일정 공유',detail:'고객 서류 마감일 공유'},{step:'변호사님 지시사항',detail:'특이사항 메모'}],prompt:'',done:false});
   if(dow===3&&!skipB3)t.push({id:dk+'-dev',type:'dev',p:'P1',title:'랜딩페이지/서류시스템 개발',who:'hyerim',min:120,guide:[{step:'개발 범위 확인',detail:'랜딩페이지 or 서류시스템'},{step:'코드 작업',detail:'오후 집중 개발'},{step:'테스트+배포',detail:'모바일+PC 확인 후 반영'}],prompt:'',done:false});
@@ -625,27 +620,28 @@ function App(){
   const copy=(txt,id)=>{navigator.clipboard?.writeText(txt);setCopyId(id);setTimeout(()=>setCopyId(''),1500)};
 
   // ── 이월: 다음 영업일로 이동 + 하루 최대시간 초과 시 연쇄 밀기 ──
-  const MAX_DAY_MIN=300; // 하루 최대 업무시간 5시간(300분)
-  const BUFFER_MIN=60;   // 돌발업무 버퍼 1시간 (1~2건 예상)
-  const PLAN_MAX=MAX_DAY_MIN-BUFFER_MIN; // 계획 업무 최대 240분
+  // MAX_DAY_MIN, BUFFER_MIN, PLAN_MAX는 전역 상수 참조
   const getNextBiz=(dk)=>{const d=new Date(dk+'T00:00:00');do{d.setDate(d.getDate()+1)}while(d.getDay()===0||d.getDay()===6);return getDK(d)};
 
-  // ── 공통 재조정 함수: 특정 날짜부터 용량 초과 P1을 연쇄 밀기 ──
-  const rebalanceFrom=(updated,startDK,limit=PLAN_MAX)=>{
+  // ── 공통 재조정: 용량 초과 P1을 연쇄 밀기 (불변성 준수) ──
+  const rebalanceFrom=(prev,startDK,limit=PLAN_MAX)=>{
+    let result={...prev};
     let checkDK=startDK;
     for(let chain=0;chain<5;chain++){
-      const dayTasks=updated[checkDK]||[];
+      const dayTasks=[...(result[checkDK]||[])];
       const totalMin=dayTasks.filter(t=>!t.done).reduce((s,t)=>s+(t.min||30),0);
       if(totalMin<=limit)break;
       const p1Undone=dayTasks.filter(t=>t.p==='P1'&&!t.done&&!t.emergency);
       if(p1Undone.length===0)break;
       const bump=p1Undone[p1Undone.length-1];
       const bumpNextDK=getNextBiz(checkDK);
-      updated[checkDK]=updated[checkDK].filter(t=>t.id!==bump.id);
-      updated[bumpNextDK]=[...(updated[bumpNextDK]||[]),{...bump,id:bumpNextDK+'-b'+Date.now()+chain+Math.random().toString(36).slice(2,5),deferred:true,deferredFrom:checkDK}];
+      result={...result,
+        [checkDK]:dayTasks.filter(t=>t.id!==bump.id),
+        [bumpNextDK]:[...(result[bumpNextDK]||[]),{...bump,id:bumpNextDK+'-b'+Date.now()+chain+Math.random().toString(36).slice(2,5),deferred:true,deferredFrom:checkDK}]
+      };
       checkDK=bumpNextDK;
     }
-    return updated;
+    return result;
   };
 
   const deferTask=(fromDK,taskId)=>{
@@ -670,42 +666,36 @@ function App(){
     });
   };
 
-  // Carry-over: P0 미완료 → 오늘로 실제 이동 + P1 초과분 밀기
-  // 이전: useMemo로 "보여주기만" → 변경: useEffect로 실제 tasks에 이동
-  const[carryProcessed,setCarryProcessed]=useP('carryProcessed','');
+  // ── Carry-over: 이전 날짜 미완료 → 오늘로 실제 이동 (1일 1회) ──
+  const carryRef=useRef(false); // useRef로 순환 의존 방지
   const carry=useMemo(()=>{
     if(!isThisWeek)return[];const c=[];const ti=now.getDay()-1;
     for(let i=0;i<ti&&i<selIdx;i++){(allDays[i]?.tasks||[]).forEach(t=>{if(!t.done&&(t.p==='P0'||t.p==='P1')&&t.type!=='meet')c.push({...t,from:DN[allDays[i].date.getDay()]+'요일',fromDK:allDays[i].dk})})}
     return c;
   },[allDays,selIdx,isThisWeek]);
 
-  // 오늘 처음 접속 시 P0 미완료를 실제로 오늘로 이동 (1일 1회)
   useEffect(()=>{
-    if(!isThisWeek||carry.length===0)return;
-    const todayKey='carry_'+todayDK;
-    if(carryProcessed===todayKey)return; // 이미 처리함
-    // 실제 이동 처리
+    if(!isThisWeek||carry.length===0||carryRef.current)return;
+    const stored=S.get('carryDone','');
+    if(stored===todayDK)return; // 이미 오늘 처리함
+    carryRef.current=true; // 이 렌더 사이클에서 재실행 방지
+
     setTasks(prev=>{
-      let updated={...prev};
-      const todayTasks=[...(updated[todayDK]||[])];
+      let result={...prev};
+      const todayTasks=[...(result[todayDK]||[])];
       carry.forEach(ct=>{
         // 원래 날짜에서 제거
-        if(updated[ct.fromDK]){
-          updated[ct.fromDK]=updated[ct.fromDK].filter(t=>t.id!==ct.id);
-        }
-        // 오늘에 추가 (중복 방지)
-        if(!todayTasks.find(t=>t.id===ct.id||t.deferredFrom===ct.fromDK&&t.title===ct.title)){
+        if(result[ct.fromDK]) result={...result,[ct.fromDK]:[...result[ct.fromDK]].filter(t=>t.id!==ct.id)};
+        // 오늘에 추가 (type+title 중복 방지)
+        if(!todayTasks.find(t=>t.type===ct.type&&t.title===ct.title)){
           todayTasks.push({...ct,id:todayDK+'-carry'+Date.now()+Math.random().toString(36).slice(2,5),deferred:true,deferredFrom:ct.fromDK,done:false});
         }
       });
-      updated[todayDK]=todayTasks;
-
-      // 오늘 업무 초과 시 P1 연쇄 밀기 (PLAN_MAX 기준 — 버퍼 확보)
-      updated=rebalanceFrom(updated,todayDK,PLAN_MAX);
-      return updated;
+      result={...result,[todayDK]:todayTasks};
+      return rebalanceFrom(result,todayDK,PLAN_MAX);
     });
-    setCarryProcessed(todayKey);
-  },[carry,isThisWeek,todayDK,carryProcessed]);
+    S.set('carryDone',todayDK);
+  },[isThisWeek,todayDK]); // carry를 deps에서 제거 → 순환 끊김
 
   const user=USERS.find(u=>u.id===curUser);
   const dTasks=sel.tasks;const dDone=dTasks.filter(t=>t.done).length;
