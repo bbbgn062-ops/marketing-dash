@@ -608,7 +608,7 @@ function App(){
       const def=genTasks(date,keywords,personas,deferredCount);
       // 이월 업무 보존 + 새 자동생성 업무 합치기
       const deferred=(existing||[]).filter(t=>t.deferred||t.emergency);
-      const merged=[...deferred,...def.filter(d=>!deferred.find(x=>x.title===d.title))];
+      const merged=[...deferred,...def.filter(d=>!deferred.find(x=>x.type===d.type&&x.title===d.title))];
       setTasks(p=>({...p,[dk]:merged.length>0?merged:def}));
       return merged.length>0?merged:def;
     }
@@ -642,7 +642,7 @@ function App(){
       const bump=p1Undone[p1Undone.length-1];
       const bumpNextDK=getNextBiz(checkDK);
       updated[checkDK]=updated[checkDK].filter(t=>t.id!==bump.id);
-      updated[bumpNextDK]=[...(updated[bumpNextDK]||[]),{...bump,id:bumpNextDK+'-bump'+Date.now(),deferred:true,deferredFrom:checkDK}];
+      updated[bumpNextDK]=[...(updated[bumpNextDK]||[]),{...bump,id:bumpNextDK+'-b'+Date.now()+chain+Math.random().toString(36).slice(2,5),deferred:true,deferredFrom:checkDK}];
       checkDK=bumpNextDK;
     }
     return updated;
@@ -675,7 +675,7 @@ function App(){
   const[carryProcessed,setCarryProcessed]=useP('carryProcessed','');
   const carry=useMemo(()=>{
     if(!isThisWeek)return[];const c=[];const ti=now.getDay()-1;
-    for(let i=0;i<ti&&i<selIdx;i++){(allDays[i]?.tasks||[]).forEach(t=>{if(!t.done&&t.p==='P0'&&t.type!=='meet')c.push({...t,from:DN[allDays[i].date.getDay()]+'요일',fromDK:allDays[i].dk})})}
+    for(let i=0;i<ti&&i<selIdx;i++){(allDays[i]?.tasks||[]).forEach(t=>{if(!t.done&&(t.p==='P0'||t.p==='P1')&&t.type!=='meet')c.push({...t,from:DN[allDays[i].date.getDay()]+'요일',fromDK:allDays[i].dk})})}
     return c;
   },[allDays,selIdx,isThisWeek]);
 
