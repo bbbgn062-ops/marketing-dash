@@ -463,13 +463,18 @@ function genBlogGuide(kw,num){
   return {subtitle,target,angle,toc,tocDetail,tags:tags.slice(0,7),ltKws,cta,cautions,intro,kwType};
 }
 
-const TASK_VER=2; // bump this to force-regenerate cached tasks
-function genTasks(date,kws,pers){
+const TASK_VER=3; // bump to force-regenerate
+// existingDeferred: 이미 이월된 업무 수를 받아서 자동생성 양 조절
+function genTasks(date,kws,pers,existingDeferred=0){
   const s=date.getDate()+date.getMonth()*31;const dow=date.getDay();const dk=getDK(date);
   if(dow===0||dow===6)return[];
   const k1=kws[s%kws.length]||'개인회생',k2=kws[(s+3)%kws.length]||'파산',k3=kws[(s+7)%kws.length]||'채무';
   const ci=s%3,pi=s%(pers.length||1);const pp=pers[pi]||DEFAULT_PERSONAS[0];
   const pn=(pp.name.split(':')[1]||pp.name).trim();
+
+  // 이월 업무가 있으면 자동생성 양 줄이기
+  const skipB3=existingDeferred>=2; // 이월 2개↑ → 블로그#3 생략
+  const skipSEO=existingDeferred>=3; // 이월 3개↑ → SEO 체크도 생략
 
   const bg1=genBlogGuide(k1,1),bg2=genBlogGuide(k2,2),bg3=genBlogGuide(k3,3);
 
@@ -513,6 +518,9 @@ function genTasks(date,kws,pers){
         {step:'대시보드 저장',detail:'본문 복사 + URL + 카페명 → 침투마케팅 탭에서 저장'}
       ],
       prompt:CAFE_PROMPTS[ci].getPrompt(pp),done:false},
+  ];
+  // 이월 업무가 적을 때만 블로그#3 추가
+  if(!skipB3){t.push(
     {id:dk+'-b3',type:'blog',p:'P1',title:`블로그 #3 (여유시): ${k3}`,who:'hyerim',min:40,
       meta:{subtitle:bg3.subtitle,target:bg3.target,angle:bg3.angle,toc:bg3.toc,tocDetail:bg3.tocDetail,tags:bg3.tags,ltKws:bg3.ltKws,cta:bg3.cta,cautions:bg3.cautions,intro:bg3.intro},
       guide:[
@@ -520,17 +528,20 @@ function genTasks(date,kws,pers){
         {step:'Claude 프롬프트',detail:`/blog-legal ${k3}`},
         {step:'빠른 수정 + 발행',detail:`핵심만 수정 → /content-check\n🏷 태그: ${bg3.tags.join(' ')}`}
       ],
-      prompt:`/blog-legal ${k3}`,done:false},
+      prompt:`/blog-legal ${k3}`,done:false});}
+  if(!skipSEO){t.push(
     {id:dk+'-seo',type:'seo',p:'P1',title:'전일 성과 체크',who:'hyerim',min:15,
       guide:[{step:'블로그 관리자 → 통계',detail:'조회수 / 유입키워드 / 검색순위 확인'},{step:'성과기록 탭에 수치 입력',detail:'일일 조회수, 유입 키워드, 순위 변동'},{step:'저조한 글 개선 검토',detail:'제목 변경 / 태그 추가 / 본문 보강 / 이미지 교체'}],
-      prompt:'',done:false},
+      prompt:'',done:false});}
+  const t2=[
     {id:dk+'-th1',type:'cafe',p:'P1',title:'[태현] 카페 후기글 보조',who:'taehyun',min:20,
       guide:[{step:'혜림이 준 프롬프트로 초안 생성',detail:'침투마케팅 탭 → 프롬프트 복사 → Claude 입력'},{step:'혜림에게 검수 받기',detail:'완성 글 공유 → 피드백 반영'},{step:'카페 등록',detail:'지정 카페에 올리기 → URL 혜림에게 보고'}],
       prompt:'',done:false},
   ];
+  t.push(...t2);
 
   if(dow===1)t.push({id:dk+'-kick',type:'meet',p:'P0',title:'주간 킥오프',who:'all',min:15,guide:[{step:'이번 주 키워드 확인',detail:'대시보드 자동 배정 키워드 리뷰'},{step:'지난주 이월건 재배치',detail:'미완료 P0 업무 확인'},{step:'태현 서류일정 공유',detail:'고객 서류 마감일 공유'},{step:'변호사님 지시사항',detail:'특이사항 메모'}],prompt:'',done:false});
-  if(dow===3)t.push({id:dk+'-dev',type:'dev',p:'P1',title:'랜딩페이지/서류시스템 개발',who:'hyerim',min:120,guide:[{step:'개발 범위 확인',detail:'랜딩페이지 or 서류시스템'},{step:'코드 작업',detail:'오후 집중 개발'},{step:'테스트+배포',detail:'모바일+PC 확인 후 반영'}],prompt:'',done:false});
+  if(dow===3&&!skipB3)t.push({id:dk+'-dev',type:'dev',p:'P1',title:'랜딩페이지/서류시스템 개발',who:'hyerim',min:120,guide:[{step:'개발 범위 확인',detail:'랜딩페이지 or 서류시스템'},{step:'코드 작업',detail:'오후 집중 개발'},{step:'테스트+배포',detail:'모바일+PC 확인 후 반영'}],prompt:'',done:false});
   if(dow===5)t.push({id:dk+'-retro',type:'meet',p:'P0',title:'주간 회고+리포트',who:'all',min:30,guide:[{step:'발행 수 확인',detail:'목표(블로그10+카페5) 대비 실제'},{step:'성과 리포트',detail:'/performance-report 실행'},{step:'카페 반응 확인',detail:'댓글·조회수·삭제 여부'},{step:'다음 주 계획',detail:'키워드 조정 + 특이사항'}],prompt:'/performance-report',done:false});
 
   return t;
@@ -590,9 +601,14 @@ function App(){
     // Auto-regenerate if: no tasks, or old-format tasks missing meta.tocDetail
     const needsRegen=!existing || (Array.isArray(existing) && existing.length>0 && existing.some(t=>t.type==='blog'&&(!t.meta||!t.meta.tocDetail)));
     if(needsRegen){
-      const def=genTasks(date,keywords,personas);
-      setTasks(p=>({...p,[dk]:def}));
-      return def;
+      // 이미 이월된 업무 수 계산 → genTasks에 전달
+      const deferredCount=(existing||[]).filter(t=>t.deferred).length;
+      const def=genTasks(date,keywords,personas,deferredCount);
+      // 이월 업무 보존 + 새 자동생성 업무 합치기
+      const deferred=(existing||[]).filter(t=>t.deferred||t.emergency);
+      const merged=[...deferred,...def.filter(d=>!deferred.find(x=>x.title===d.title))];
+      setTasks(p=>({...p,[dk]:merged.length>0?merged:def}));
+      return merged.length>0?merged:def;
     }
     return existing;
   };
@@ -793,6 +809,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
     {id:'today',l:'오늘',ic:'☀️'},
     {id:'week',l:'주간',ic:'📅'},
     {id:'write',l:'글쓰기',ic:'✍️'},
+    {id:'calendar',l:'캘린더',ic:'📆'},
     {id:'cafe',l:'침투마케팅',ic:'🎭'},
     {id:'memo',l:'메모',ic:'📝'},
     {id:'record',l:'성과',ic:'📊'},
@@ -895,6 +912,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
       {tab==='today'&&<TodayView dk={dk} tasks={dTasks} carry={carry} updateTask={updateTask} deleteTask={deleteTask} addTask={addTask} deferTask={deferTask} copy={copy} copyId={copyId} curUser={curUser} dPct={dPct} isToday={getDK(sel.date)===todayDK} onEmergency={()=>setShowEmergency(true)}/>}
       {tab==='week'&&<WeekView allDays={allDays} setSelIdx={setSelIdx} setTab={setTab} todayDK={todayDK} onEmergency={()=>setShowEmergency(true)}/>}
       {tab==='write'&&<WriteView personas={personas} keywords={keywords} copy={copy} copyId={copyId}/>}
+      {tab==='calendar'&&<CalendarView tasks={tasks} todayDK={todayDK} setSelIdx={setSelIdx} setTab={setTab} wd={wd} weekOff={weekOff} setWeekOff={setWeekOff}/>}
       {tab==='cafe'&&<CafeView copy={copy} copyId={copyId} posts={posts} setPosts={setPosts} personas={personas}/>}
       {tab==='memo'&&<MemoView memos={memos} setMemos={setMemos} curUser={curUser}/>}
       {tab==='record'&&<RecordView records={records} setRecords={setRecords} exportReport={exportReport} tasks={tasks} posts={posts}/>}
@@ -1543,6 +1561,153 @@ function RiskView(){
         </div>)}
       </div>
     </div>)}
+  </div>);
+}
+
+/* ═══ CALENDAR VIEW (캘린더 탭) ═══ */
+function CalendarView({tasks,todayDK,setSelIdx,setTab,wd,weekOff,setWeekOff}){
+  const[calOff,setCalOff]=useState(0);
+  const now=getToday();
+  // 현재 월 기준
+  const baseMonth=new Date(now.getFullYear(),now.getMonth()+calOff,1);
+  const year=baseMonth.getFullYear();const month=baseMonth.getMonth();
+  const monthName=`${year}년 ${month+1}월`;
+
+  // 달력 그리드 (일~토, 6주)
+  const firstDay=new Date(year,month,1).getDay(); // 0=일
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const prevDays=new Date(year,month,0).getDate();
+  const cells=[];
+  // 이전 달
+  for(let i=firstDay-1;i>=0;i--)cells.push({d:prevDays-i,m:month-1,dim:true});
+  // 이번 달
+  for(let i=1;i<=daysInMonth;i++)cells.push({d:i,m:month,dim:false});
+  // 다음 달
+  while(cells.length<42)cells.push({d:cells.length-firstDay-daysInMonth+1,m:month+1,dim:true});
+
+  const getDKForCell=(c)=>{
+    const y=c.m<0?year-1:c.m>11?year+1:year;
+    const m2=((c.m%12)+12)%12;
+    return `${y}-${String(m2+1).padStart(2,'0')}-${String(c.d).padStart(2,'0')}`;
+  };
+
+  // 업무 유형별 색상
+  const typeColors={blog:'#6c5ce7',cafe:'#a29bfe',seo:'#e17055',meet:'#00b894',dev:'#fd79a8',check:'#636e72'};
+
+  return(<div>
+    <div className="section-header" style={{background:'linear-gradient(135deg,#0ea5e9,#6366f1)'}}>
+      <h2>📆 캘린더</h2>
+      <p>월간 일정 한눈에 보기 · 날짜 클릭 → 상세 업무 확인</p>
+    </div>
+
+    {/* 월 이동 */}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,padding:'0 4px'}}>
+      <button onClick={()=>setCalOff(p=>p-1)} style={{width:36,height:36,borderRadius:10,border:'1px solid var(--border)',background:'#fff',fontSize:16,cursor:'pointer'}}>←</button>
+      <div style={{textAlign:'center'}}>
+        <p style={{fontSize:18,fontWeight:800,color:'var(--primary)'}}>{monthName}</p>
+        {calOff!==0&&<button onClick={()=>setCalOff(0)} style={{padding:'2px 10px',borderRadius:6,border:'none',background:'var(--primary-l)',color:'var(--primary)',fontSize:10,fontWeight:700,cursor:'pointer',marginTop:2}}>오늘로</button>}
+      </div>
+      <button onClick={()=>setCalOff(p=>p+1)} style={{width:36,height:36,borderRadius:10,border:'1px solid var(--border)',background:'#fff',fontSize:16,cursor:'pointer'}}>→</button>
+    </div>
+
+    {/* 요일 헤더 */}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:2,marginBottom:4}}>
+      {['일','월','화','수','목','금','토'].map((d,i)=><div key={i} style={{textAlign:'center',fontSize:11,fontWeight:700,padding:6,color:i===0?'#dc2626':i===6?'#3b82f6':'var(--text2)'}}>{d}</div>)}
+    </div>
+
+    {/* 날짜 그리드 */}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:2}}>
+      {cells.map((c,i)=>{
+        const dk=getDKForCell(c);
+        const dayTasks=(tasks[dk]||[]);
+        const isToday=dk===todayDK;
+        const dow=new Date(dk+'T00:00:00').getDay();
+        const isWeekend=dow===0||dow===6;
+        const done=dayTasks.filter(t=>t.done).length;
+        const total=dayTasks.length;
+        const pct=total?Math.round(done/total*100):0;
+        const hasDef=dayTasks.some(t=>t.deferred);
+        const hasEmg=dayTasks.some(t=>t.emergency);
+        const totalMin=dayTasks.filter(t=>!t.done).reduce((s,t)=>s+(t.min||0),0);
+
+        return <div key={i} onClick={()=>{
+          // 이번 달 평일 클릭 → 오늘 탭으로 이동
+          if(!c.dim&&!isWeekend){
+            const dayIdx=wd.findIndex(w=>getDK(w)===dk);
+            if(dayIdx>=0){setSelIdx(dayIdx);setTab('today')}
+          }
+        }} style={{
+          minHeight:72,padding:4,borderRadius:10,
+          background:isToday?'linear-gradient(135deg,#ede9fe,#ddd6fe)':c.dim?'#f8f7ff':'#fff',
+          border:isToday?'2px solid var(--primary)':'1px solid '+(c.dim?'transparent':'var(--border)'),
+          opacity:c.dim?.4:1,
+          cursor:!c.dim&&!isWeekend?'pointer':'default',
+          transition:'all .15s',
+          position:'relative'
+        }}>
+          {/* 날짜 숫자 */}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}}>
+            <span style={{fontSize:12,fontWeight:isToday?800:600,color:isToday?'var(--primary)':dow===0?'#dc2626':dow===6?'#3b82f6':'var(--text)'}}>{c.d}</span>
+            {hasEmg&&<span style={{fontSize:8}}>🚨</span>}
+            {hasDef&&!hasEmg&&<span style={{fontSize:8}}>📌</span>}
+          </div>
+          {/* 업무 요약 (주말 제외) */}
+          {!isWeekend&&total>0&&<div>
+            {/* 업무 타입별 작은 도트 */}
+            <div style={{display:'flex',gap:2,flexWrap:'wrap',marginBottom:2}}>
+              {[...new Set(dayTasks.map(t=>t.type))].slice(0,4).map((type,j)=><span key={j} style={{width:6,height:6,borderRadius:3,background:typeColors[type]||'#999'}}/>)}
+            </div>
+            {/* 완료율 바 */}
+            <div style={{height:3,background:'#e5e3ef',borderRadius:2,overflow:'hidden'}}>
+              <div style={{height:'100%',width:`${pct}%`,background:pct===100?'var(--success)':'var(--primary)',borderRadius:2,transition:'width .3s'}}/>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',marginTop:1}}>
+              <span style={{fontSize:8,color:pct===100?'var(--success)':'var(--text3)',fontWeight:600}}>{done}/{total}</span>
+              {totalMin>0&&<span style={{fontSize:8,color:totalMin>300?'var(--danger)':'var(--text3)'}}>{Math.round(totalMin/60)}h</span>}
+            </div>
+          </div>}
+          {isWeekend&&!c.dim&&<p style={{fontSize:8,color:'var(--text4)',textAlign:'center',marginTop:8}}>휴일</p>}
+        </div>;
+      })}
+    </div>
+
+    {/* 범례 */}
+    <div className="card" style={{padding:12,marginTop:10}}>
+      <p style={{fontSize:12,fontWeight:700,marginBottom:6}}>범례</p>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',fontSize:10}}>
+        {Object.entries(typeColors).map(([k,c])=><span key={k} style={{display:'flex',alignItems:'center',gap:3}}><span style={{width:8,height:8,borderRadius:3,background:c}}/>{k==='blog'?'블로그':k==='cafe'?'카페':k==='seo'?'SEO':k==='meet'?'미팅':k==='dev'?'개발':'검수'}</span>)}
+        <span style={{display:'flex',alignItems:'center',gap:3}}>📌 이월</span>
+        <span style={{display:'flex',alignItems:'center',gap:3}}>🚨 긴급</span>
+      </div>
+      <div style={{display:'flex',gap:10,marginTop:6,fontSize:10,color:'var(--text3)'}}>
+        <span>완료율 바: <span style={{color:'var(--success)'}}>■</span> 100% / <span style={{color:'var(--primary)'}}>■</span> 진행중</span>
+        <span><span style={{color:'var(--danger)'}}>빨간 시간</span> = 하루 5h 초과</span>
+      </div>
+    </div>
+
+    {/* 이번 주 요약 */}
+    <div className="card" style={{padding:14,marginTop:4}}>
+      <p style={{fontSize:13,fontWeight:800,marginBottom:8}}>📊 이번 주 요약</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:4}}>
+        {wd.map((d,i)=>{
+          const dk2=getDK(d);const dt=tasks[dk2]||[];
+          const dn2=dt.filter(t=>t.done).length;
+          const defCnt=dt.filter(t=>t.deferred).length;
+          const emgCnt=dt.filter(t=>t.emergency).length;
+          const isT=dk2===todayDK;
+          const totalMin2=dt.filter(t=>!t.done).reduce((s,t)=>s+(t.min||0),0);
+          return <div key={i} style={{padding:8,borderRadius:8,background:isT?'var(--primary-xl)':'#f8f9fc',border:isT?'1.5px solid var(--primary)':'1px solid var(--border)',textAlign:'center'}}>
+            <p style={{fontSize:11,fontWeight:isT?800:600,color:isT?'var(--primary)':'var(--text2)'}}>{DN[d.getDay()]}</p>
+            <p style={{fontSize:16,fontWeight:800,color:dn2===dt.length&&dt.length>0?'var(--success)':'var(--text)',marginTop:2}}>{dn2}/{dt.length}</p>
+            <div style={{display:'flex',gap:2,justifyContent:'center',marginTop:2}}>
+              {defCnt>0&&<span style={{fontSize:8,background:'#fef3c7',borderRadius:3,padding:'1px 3px'}}>📌{defCnt}</span>}
+              {emgCnt>0&&<span style={{fontSize:8,background:'#fef2f2',borderRadius:3,padding:'1px 3px'}}>🚨{emgCnt}</span>}
+            </div>
+            {totalMin2>0&&<p style={{fontSize:8,color:totalMin2>300?'var(--danger)':'var(--text4)',marginTop:1}}>{Math.round(totalMin2/60)}h 남음</p>}
+          </div>;
+        })}
+      </div>
+    </div>
   </div>);
 }
 
