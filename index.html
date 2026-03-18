@@ -472,9 +472,11 @@ function genTasks(date,kws,pers,existingDeferred=0){
   const ci=s%3,pi=s%(pers.length||1);const pp=pers[pi]||DEFAULT_PERSONAS[0];
   const pn=(pp.name.split(':')[1]||pp.name).trim();
 
-  // 이월 업무가 있으면 자동생성 양 줄이기
-  const skipB3=existingDeferred>=2; // 이월 2개↑ → 블로그#3 생략
-  const skipSEO=existingDeferred>=3; // 이월 3개↑ → SEO 체크도 생략
+  // 이월 업무 수 + 돌발 버퍼(1h) 고려 → 자동생성 양 조절
+  // 기본 P0: 블로그1(40)+블로그2(40)+카페(25) = 105분
+  // 이월 없어도 P1은 여유분만 — 버퍼 60분 확보
+  const skipB3=existingDeferred>=1; // 이월 1개↑ → 블로그#3 생략
+  const skipSEO=existingDeferred>=2; // 이월 2개↑ → SEO 체크도 생략
 
   const bg1=genBlogGuide(k1,1),bg2=genBlogGuide(k2,2),bg3=genBlogGuide(k3,3);
 
@@ -624,43 +626,48 @@ function App(){
 
   // ── 이월: 다음 영업일로 이동 + 하루 최대시간 초과 시 연쇄 밀기 ──
   const MAX_DAY_MIN=300; // 하루 최대 업무시간 5시간(300분)
+  const BUFFER_MIN=60;   // 돌발업무 버퍼 1시간 (1~2건 예상)
+  const PLAN_MAX=MAX_DAY_MIN-BUFFER_MIN; // 계획 업무 최대 240분
   const getNextBiz=(dk)=>{const d=new Date(dk+'T00:00:00');do{d.setDate(d.getDate()+1)}while(d.getDay()===0||d.getDay()===6);return getDK(d)};
+
+  // ── 공통 재조정 함수: 특정 날짜부터 용량 초과 P1을 연쇄 밀기 ──
+  const rebalanceFrom=(updated,startDK,limit=PLAN_MAX)=>{
+    let checkDK=startDK;
+    for(let chain=0;chain<5;chain++){
+      const dayTasks=updated[checkDK]||[];
+      const totalMin=dayTasks.filter(t=>!t.done).reduce((s,t)=>s+(t.min||30),0);
+      if(totalMin<=limit)break;
+      const p1Undone=dayTasks.filter(t=>t.p==='P1'&&!t.done&&!t.emergency);
+      if(p1Undone.length===0)break;
+      const bump=p1Undone[p1Undone.length-1];
+      const bumpNextDK=getNextBiz(checkDK);
+      updated[checkDK]=updated[checkDK].filter(t=>t.id!==bump.id);
+      updated[bumpNextDK]=[...(updated[bumpNextDK]||[]),{...bump,id:bumpNextDK+'-bump'+Date.now(),deferred:true,deferredFrom:checkDK}];
+      checkDK=bumpNextDK;
+    }
+    return updated;
+  };
 
   const deferTask=(fromDK,taskId)=>{
     setTasks(prev=>{
       const fromTasks=prev[fromDK]||[];
       const task=fromTasks.find(t=>t.id===taskId);
       if(!task)return prev;
-
       const nextDK=getNextBiz(fromDK);
-      // fromDK에서 제거
       let updated={...prev,[fromDK]:fromTasks.filter(t=>t.id!==taskId)};
-      // nextDK에 이월 태스크 추가
-      const deferredTask={...task,id:nextDK+'-def'+Date.now(),done:false,deferred:true,deferredFrom:fromDK};
-      updated[nextDK]=[...(updated[nextDK]||[]),deferredTask];
-
-      // ── 연쇄 밀기: 하루 최대시간 초과 시 P1을 다음날로 ──
-      // 최대 5영업일까지 연쇄 (무한루프 방지)
-      let checkDK=nextDK;
-      for(let chain=0;chain<5;chain++){
-        const dayTasks=updated[checkDK]||[];
-        const totalMin=dayTasks.filter(t=>!t.done).reduce((s,t)=>s+(t.min||30),0);
-        if(totalMin<=MAX_DAY_MIN)break; // 하루 용량 OK → 중단
-
-        // 초과분: P1 태스크 중 뒤에서부터 밀기
-        const p1Undone=dayTasks.filter(t=>t.p==='P1'&&!t.done&&!t.emergency);
-        if(p1Undone.length===0)break; // 밀 수 있는 P1 없음 → 중단
-
-        const bump=p1Undone[p1Undone.length-1]; // 가장 후순위 P1
-        const bumpNextDK=getNextBiz(checkDK);
-        updated[checkDK]=updated[checkDK].filter(t=>t.id!==bump.id);
-        const bumpedTask={...bump,id:bumpNextDK+'-bump'+Date.now(),deferred:true,deferredFrom:checkDK};
-        updated[bumpNextDK]=[...(updated[bumpNextDK]||[]),bumpedTask];
-        checkDK=bumpNextDK; // 다음날도 확인
-      }
-      return updated;
+      updated[nextDK]=[...(updated[nextDK]||[]),{...task,id:nextDK+'-def'+Date.now(),done:false,deferred:true,deferredFrom:fromDK}];
+      return rebalanceFrom(updated,nextDK);
     });
     setSaved(true);setTimeout(()=>setSaved(false),1500);
+  };
+
+  // ── 돌발업무 추가 후 자동 재조정 ──
+  const addEmergencyTask=(dk,task)=>{
+    setTasks(prev=>{
+      let updated={...prev,[dk]:[...(prev[dk]||[]),task]};
+      // 돌발업무 추가 → 버퍼 소진 → MAX_DAY_MIN 기준으로 P1 밀기
+      return rebalanceFrom(updated,dk,MAX_DAY_MIN);
+    });
   };
 
   // Carry-over: P0 미완료 → 오늘로 실제 이동 + P1 초과분 밀기
@@ -693,19 +700,8 @@ function App(){
       });
       updated[todayDK]=todayTasks;
 
-      // 오늘 업무 초과 시 P1 연쇄 밀기
-      const totalMin=todayTasks.filter(t=>!t.done).reduce((s,t)=>s+(t.min||30),0);
-      if(totalMin>MAX_DAY_MIN){
-        const p1s=todayTasks.filter(t=>t.p==='P1'&&!t.done&&!t.emergency);
-        let excess=totalMin-MAX_DAY_MIN;
-        const nextDK=getNextBiz(todayDK);
-        for(let j=p1s.length-1;j>=0&&excess>0;j--){
-          const b=p1s[j];
-          updated[todayDK]=updated[todayDK].filter(t=>t.id!==b.id);
-          updated[nextDK]=[...(updated[nextDK]||[]),{...b,id:nextDK+'-auto'+Date.now()+j,deferred:true,deferredFrom:todayDK}];
-          excess-=(b.min||30);
-        }
-      }
+      // 오늘 업무 초과 시 P1 연쇄 밀기 (PLAN_MAX 기준 — 버퍼 확보)
+      updated=rebalanceFrom(updated,todayDK,PLAN_MAX);
       return updated;
     });
     setCarryProcessed(todayKey);
@@ -923,7 +919,7 @@ ${['성과','비용','팁','아이디어','이슈'].map(t=>`<tr><td>${t}</td><td
       <button onClick={()=>setShowEmergency(true)} style={{position:'fixed',bottom:80,right:16,width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,#dc2626,#ef4444)',color:'#fff',border:'none',fontSize:24,fontWeight:900,cursor:'pointer',boxShadow:'0 4px 20px rgba(220,38,38,.4)',zIndex:90,display:'flex',alignItems:'center',justifyContent:'center',transition:'transform .2s'}} onMouseOver={e=>e.currentTarget.style.transform='scale(1.1)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'} title="돌발업무 추가">🚨</button>
 
       {/* ── 돌발업무 모달 ── */}
-      {showEmergency&&<EmergencyModal onClose={()=>setShowEmergency(false)} addTask={addTask} dk={dk} curUser={curUser}/>}
+      {showEmergency&&<EmergencyModal onClose={()=>setShowEmergency(false)} addTask={addEmergencyTask} dk={dk} curUser={curUser}/>}
     </div>
   );
 }
@@ -1663,7 +1659,7 @@ function CalendarView({tasks,todayDK,setSelIdx,setTab,wd,weekOff,setWeekOff}){
             </div>
             <div style={{display:'flex',justifyContent:'space-between',marginTop:1}}>
               <span style={{fontSize:8,color:pct===100?'var(--success)':'var(--text3)',fontWeight:600}}>{done}/{total}</span>
-              {totalMin>0&&<span style={{fontSize:8,color:totalMin>300?'var(--danger)':'var(--text3)'}}>{Math.round(totalMin/60)}h</span>}
+              {totalMin>0&&<span style={{fontSize:8,color:totalMin>240?'var(--danger)':totalMin>180?'var(--warn)':'var(--text3)'}}>{Math.round(totalMin/60)}h</span>}
             </div>
           </div>}
           {isWeekend&&!c.dim&&<p style={{fontSize:8,color:'var(--text4)',textAlign:'center',marginTop:8}}>휴일</p>}
@@ -1703,7 +1699,7 @@ function CalendarView({tasks,todayDK,setSelIdx,setTab,wd,weekOff,setWeekOff}){
               {defCnt>0&&<span style={{fontSize:8,background:'#fef3c7',borderRadius:3,padding:'1px 3px'}}>📌{defCnt}</span>}
               {emgCnt>0&&<span style={{fontSize:8,background:'#fef2f2',borderRadius:3,padding:'1px 3px'}}>🚨{emgCnt}</span>}
             </div>
-            {totalMin2>0&&<p style={{fontSize:8,color:totalMin2>300?'var(--danger)':'var(--text4)',marginTop:1}}>{Math.round(totalMin2/60)}h 남음</p>}
+            {totalMin2>0&&<p style={{fontSize:8,color:totalMin2>240?'var(--danger)':totalMin2>180?'var(--warn)':'var(--text4)',marginTop:1}}>{Math.round(totalMin2/60)}h{totalMin2<=240?` (여유${Math.round((240-totalMin2)/60*10)/10}h)`:' ⚠️초과'}</p>}
           </div>;
         })}
       </div>
