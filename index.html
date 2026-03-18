@@ -606,49 +606,94 @@ function App(){
   const addTask=(dk,task)=>setTasks(p=>({...p,[dk]:[...(p[dk]||[]),task]}));
   const copy=(txt,id)=>{navigator.clipboard?.writeText(txt);setCopyId(id);setTimeout(()=>setCopyId(''),1500)};
 
-  // ── 더블클릭 이월: 다음 영업일로 이동 + 이후 일정 재조정 ──
+  // ── 이월: 다음 영업일로 이동 + 하루 최대시간 초과 시 연쇄 밀기 ──
+  const MAX_DAY_MIN=300; // 하루 최대 업무시간 5시간(300분)
+  const getNextBiz=(dk)=>{const d=new Date(dk+'T00:00:00');do{d.setDate(d.getDate()+1)}while(d.getDay()===0||d.getDay()===6);return getDK(d)};
+
   const deferTask=(fromDK,taskId)=>{
     setTasks(prev=>{
       const fromTasks=prev[fromDK]||[];
       const task=fromTasks.find(t=>t.id===taskId);
       if(!task)return prev;
 
-      // 다음 영업일 계산
-      const fromDate=new Date(fromDK+'T00:00:00');
-      const nextBiz=new Date(fromDate);
-      do{nextBiz.setDate(nextBiz.getDate()+1)}while(nextBiz.getDay()===0||nextBiz.getDay()===6);
-      const nextDK=getDK(nextBiz);
-
+      const nextDK=getNextBiz(fromDK);
       // fromDK에서 제거
-      const newFrom=fromTasks.filter(t=>t.id!==taskId);
-      // nextDK에 추가 (deferred 표시)
+      let updated={...prev,[fromDK]:fromTasks.filter(t=>t.id!==taskId)};
+      // nextDK에 이월 태스크 추가
       const deferredTask={...task,id:nextDK+'-def'+Date.now(),done:false,deferred:true,deferredFrom:fromDK};
-      const nextTasks=[...(prev[nextDK]||[]),deferredTask];
+      updated[nextDK]=[...(updated[nextDK]||[]),deferredTask];
 
-      // 이후 일정 재조정: nextDK 이후 영업일의 같은 타입 업무 중 P1 하나를 그 다음날로 밀기
-      let updated={...prev,[fromDK]:newFrom,[nextDK]:nextTasks};
-      // nextDK에 같은 타입 P1 태스크가 이미 있으면 → 하나를 그 다음 영업일로 밀기
-      const sameTypeP1=nextTasks.filter(t=>t.type===task.type&&t.p==='P1'&&t.id!==deferredTask.id&&!t.done);
-      if(sameTypeP1.length>0){
-        const bump=sameTypeP1[sameTypeP1.length-1]; // 마지막 P1 하나를 밀기
-        const afterBiz=new Date(nextBiz);
-        do{afterBiz.setDate(afterBiz.getDate()+1)}while(afterBiz.getDay()===0||afterBiz.getDay()===6);
-        const afterDK=getDK(afterBiz);
-        updated[nextDK]=updated[nextDK].filter(t=>t.id!==bump.id);
-        const bumpedTask={...bump,id:afterDK+'-bump'+Date.now(),deferred:true,deferredFrom:nextDK};
-        updated[afterDK]=[...(updated[afterDK]||[]),bumpedTask];
+      // ── 연쇄 밀기: 하루 최대시간 초과 시 P1을 다음날로 ──
+      // 최대 5영업일까지 연쇄 (무한루프 방지)
+      let checkDK=nextDK;
+      for(let chain=0;chain<5;chain++){
+        const dayTasks=updated[checkDK]||[];
+        const totalMin=dayTasks.filter(t=>!t.done).reduce((s,t)=>s+(t.min||30),0);
+        if(totalMin<=MAX_DAY_MIN)break; // 하루 용량 OK → 중단
+
+        // 초과분: P1 태스크 중 뒤에서부터 밀기
+        const p1Undone=dayTasks.filter(t=>t.p==='P1'&&!t.done&&!t.emergency);
+        if(p1Undone.length===0)break; // 밀 수 있는 P1 없음 → 중단
+
+        const bump=p1Undone[p1Undone.length-1]; // 가장 후순위 P1
+        const bumpNextDK=getNextBiz(checkDK);
+        updated[checkDK]=updated[checkDK].filter(t=>t.id!==bump.id);
+        const bumpedTask={...bump,id:bumpNextDK+'-bump'+Date.now(),deferred:true,deferredFrom:checkDK};
+        updated[bumpNextDK]=[...(updated[bumpNextDK]||[]),bumpedTask];
+        checkDK=bumpNextDK; // 다음날도 확인
       }
       return updated;
     });
     setSaved(true);setTimeout(()=>setSaved(false),1500);
   };
 
-  // Carry-over: P0 + P1 미완료 → 오늘로 자동 이월 + 알림
+  // Carry-over: P0 미완료 → 오늘로 실제 이동 + P1 초과분 밀기
+  // 이전: useMemo로 "보여주기만" → 변경: useEffect로 실제 tasks에 이동
+  const[carryProcessed,setCarryProcessed]=useP('carryProcessed','');
   const carry=useMemo(()=>{
     if(!isThisWeek)return[];const c=[];const ti=now.getDay()-1;
-    for(let i=0;i<ti&&i<selIdx;i++){(allDays[i]?.tasks||[]).forEach(t=>{if(!t.done&&(t.p==='P0'||t.p==='P1')&&t.type!=='meet')c.push({...t,from:DN[allDays[i].date.getDay()]+'요일',fromDK:allDays[i].dk})})}
+    for(let i=0;i<ti&&i<selIdx;i++){(allDays[i]?.tasks||[]).forEach(t=>{if(!t.done&&t.p==='P0'&&t.type!=='meet')c.push({...t,from:DN[allDays[i].date.getDay()]+'요일',fromDK:allDays[i].dk})})}
     return c;
   },[allDays,selIdx,isThisWeek]);
+
+  // 오늘 처음 접속 시 P0 미완료를 실제로 오늘로 이동 (1일 1회)
+  useEffect(()=>{
+    if(!isThisWeek||carry.length===0)return;
+    const todayKey='carry_'+todayDK;
+    if(carryProcessed===todayKey)return; // 이미 처리함
+    // 실제 이동 처리
+    setTasks(prev=>{
+      let updated={...prev};
+      const todayTasks=[...(updated[todayDK]||[])];
+      carry.forEach(ct=>{
+        // 원래 날짜에서 제거
+        if(updated[ct.fromDK]){
+          updated[ct.fromDK]=updated[ct.fromDK].filter(t=>t.id!==ct.id);
+        }
+        // 오늘에 추가 (중복 방지)
+        if(!todayTasks.find(t=>t.id===ct.id||t.deferredFrom===ct.fromDK&&t.title===ct.title)){
+          todayTasks.push({...ct,id:todayDK+'-carry'+Date.now()+Math.random().toString(36).slice(2,5),deferred:true,deferredFrom:ct.fromDK,done:false});
+        }
+      });
+      updated[todayDK]=todayTasks;
+
+      // 오늘 업무 초과 시 P1 연쇄 밀기
+      const totalMin=todayTasks.filter(t=>!t.done).reduce((s,t)=>s+(t.min||30),0);
+      if(totalMin>MAX_DAY_MIN){
+        const p1s=todayTasks.filter(t=>t.p==='P1'&&!t.done&&!t.emergency);
+        let excess=totalMin-MAX_DAY_MIN;
+        const nextDK=getNextBiz(todayDK);
+        for(let j=p1s.length-1;j>=0&&excess>0;j--){
+          const b=p1s[j];
+          updated[todayDK]=updated[todayDK].filter(t=>t.id!==b.id);
+          updated[nextDK]=[...(updated[nextDK]||[]),{...b,id:nextDK+'-auto'+Date.now()+j,deferred:true,deferredFrom:todayDK}];
+          excess-=(b.min||30);
+        }
+      }
+      return updated;
+    });
+    setCarryProcessed(todayKey);
+  },[carry,isThisWeek,todayDK,carryProcessed]);
 
   const user=USERS.find(u=>u.id===curUser);
   const dTasks=sel.tasks;const dDone=dTasks.filter(t=>t.done).length;
